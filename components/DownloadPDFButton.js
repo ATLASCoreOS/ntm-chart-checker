@@ -10,19 +10,36 @@ export default function DownloadPDFButton({ result, checkId }) {
     setGenerating(true);
     setError(null);
     try {
-      const body = checkId ? { checkId } : { result };
-      const res = await fetch("/api/report/pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+      let data = result;
+
+      // If we only have a checkId, fetch the full result first
+      if (checkId && !result) {
+        const res = await fetch(`/api/checks/${checkId}`);
+        if (!res.ok) throw new Error("Failed to load check");
+        const json = await res.json();
+        data = json.results;
+      }
+
+      if (!data) throw new Error("No data available");
+
+      // Dynamic import to keep the main bundle small
+      const [{ pdf }, { NtMReport }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("@/lib/pdf-report"),
+      ]);
+
+      const doc = NtMReport({
+        result: data,
+        userName: "",
+        generatedAt: new Date().toISOString(),
       });
-      if (!res.ok) throw new Error("PDF generation failed");
-      const blob = await res.blob();
+
+      const blob = await pdf(doc).toBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const week = result?.weekInfo?.week || "unknown";
-      const year = result?.weekInfo?.year || "unknown";
+      const week = data?.weekInfo?.week || "unknown";
+      const year = data?.weekInfo?.year || "unknown";
       a.download = `NtM-Report-Wk${String(week).padStart(2, "0")}-${year}.pdf`;
       document.body.appendChild(a);
       a.click();

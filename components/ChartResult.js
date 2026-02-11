@@ -17,7 +17,7 @@ export default function ChartResult({ chart, corrections, tpNotices, tpInForce =
   } else if (tpNotices.length > 0 || tpInForce.length > 0) {
     const count = tpNotices.length + tpInForce.length;
     badgeText = `${count} T&P`;
-    badgeClass = "bg-amber-50 text-amber-700 border border-amber-200";
+    badgeClass = "bg-orange-50 text-orange-700 border border-orange-200";
   }
 
   return (
@@ -55,7 +55,7 @@ export default function ChartResult({ chart, corrections, tpNotices, tpInForce =
 
           {tpNotices.length > 0 && (
             <div className="mt-4">
-              <h4 className="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-2">
+              <h4 className="text-xs font-semibold text-orange-600 uppercase tracking-wider mb-2">
                 New T&P Notices This Week
               </h4>
               <div className="space-y-2">
