@@ -46,42 +46,118 @@ function formatExcerpt(raw) {
   return result.join("\n").trim();
 }
 
-export default function CorrectionItem({ correction }) {
-  const formatted = formatExcerpt(correction.excerpt);
-  const lines = formatted.split("\n").filter(Boolean);
-  let title = "";
-  let detail = "";
+// Parse formatted excerpt into structured sections for display
+function parseExcerpt(raw) {
+  const formatted = formatExcerpt(raw);
+  if (!formatted) return { subject: "", source: "", previousUpdate: "", datum: "", body: "" };
 
-  if (lines.length > 0) {
-    title = lines[0].replace(/^\d+\*?\s+/, "").trim();
-    detail = lines.slice(1).join("\n").trim();
+  const lines = formatted.split("\n");
+  let subject = "";
+  let source = "";
+  let previousUpdate = "";
+  let datum = "";
+  const bodyLines = [];
+  let headerDone = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed && !headerDone) continue;
+
+    // First non-empty line: subject (strip NM number prefix if present)
+    if (!subject && !headerDone && trimmed) {
+      subject = trimmed.replace(/^\d+\*?\s+/, "").trim();
+      continue;
+    }
+
+    // Source line
+    if (!headerDone && /^Source:/i.test(trimmed)) {
+      source = trimmed.replace(/^Source:\s*/i, "").trim();
+      continue;
+    }
+
+    // Chart reference line — extract metadata then mark header done
+    if (!headerDone && /^Chart\s+\d/i.test(trimmed)) {
+      const prevMatch = trimmed.match(/\[\s*previous update\s+([^\]]+)\]/i);
+      if (prevMatch) previousUpdate = prevMatch[1].trim();
+      const datumMatch = trimmed.match(/(ETRS89|WGS84|ED50|OSGB36)\s*(DATUM)?/i);
+      if (datumMatch) datum = datumMatch[0].trim();
+      headerDone = true;
+      continue;
+    }
+
+    // If we hit an action keyword without finding chart ref, mark header done
+    if (!headerDone && /^(Insert|Delete|Move|Amend|Add|Remove|Substitute|Replace)\s/i.test(trimmed)) {
+      headerDone = true;
+    }
+
+    if (headerDone) {
+      bodyLines.push(line);
+    }
   }
+
+  return {
+    subject,
+    source,
+    previousUpdate,
+    datum,
+    body: bodyLines.join("\n").trim(),
+  };
+}
+
+export default function CorrectionItem({ correction }) {
+  const { subject, source, previousUpdate, datum, body } = parseExcerpt(correction.excerpt);
 
   return (
     <div className="border border-red-200 rounded-lg overflow-hidden">
-      <div className="bg-red-50 px-4 py-2.5 flex items-baseline justify-between gap-3">
-        <span className="text-sm font-bold text-red-800">
-          NM {correction.nmNumber}
-        </span>
+      {/* NM number header */}
+      <div className="bg-red-50 px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <span className="text-sm font-bold text-red-800">
+            NM {correction.nmNumber}
+          </span>
+          {datum && (
+            <span className="text-[10px] font-medium text-gray-500 bg-white/70 px-1.5 py-0.5 rounded border border-red-100">
+              {datum}
+            </span>
+          )}
+        </div>
         {correction.isPdfBlock && (
           <span className="px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-[10px] font-medium shrink-0">
             Block Correction
           </span>
         )}
       </div>
-      {title && (
-        <div className="px-4 py-2 border-t border-red-100">
-          <p className="text-xs font-medium text-gray-700">{title}</p>
+
+      {/* Subject & metadata */}
+      {(subject || source || previousUpdate) && (
+        <div className="px-4 py-2 border-t border-red-100 space-y-0.5">
+          {subject && (
+            <p className="text-xs font-semibold text-gray-800">{subject}</p>
+          )}
+          {(source || previousUpdate) && (
+            <div className="flex flex-wrap gap-x-4 text-[11px] text-gray-500">
+              {source && (
+                <span><span className="font-medium text-gray-400">Source:</span> {source}</span>
+              )}
+              {previousUpdate && (
+                <span><span className="font-medium text-gray-400">Prev update:</span> {previousUpdate}</span>
+              )}
+            </div>
+          )}
         </div>
       )}
-      {detail && (
+
+      {/* Instruction body */}
+      {body && (
         <div className="px-4 py-3 border-t border-red-100 bg-white">
           <pre className="text-xs text-gray-600 whitespace-pre-wrap break-words font-[inherit] leading-relaxed m-0">
-            {detail}
+            {body}
           </pre>
         </div>
       )}
-      {!title && !detail && correction.excerpt && (
+
+      {/* Fallback for unparseable content */}
+      {!subject && !body && correction.excerpt && (
         <div className="px-4 py-3 bg-white">
           <pre className="text-xs text-gray-600 whitespace-pre-wrap break-words font-[inherit] leading-relaxed m-0">
             {correction.excerpt}
