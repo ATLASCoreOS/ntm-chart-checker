@@ -20,24 +20,7 @@ function formatExcerpt(raw) {
   text = text.replace(/[ \t]{2,}/g, " ");
   let lines = text.split("\n").map(l => l.trim()).filter(Boolean);
 
-  // Truncate at next NM entry (e.g. "764* ENGLAND - ...")
-  const nextNmIdx = lines.findIndex((l, i) => i > 0 && /^\d{3,5}\*?\s+[A-Z][A-Z]/.test(l));
-  if (nextNmIdx > 0) lines = lines.slice(0, nextNmIdx);
-
-  // Truncate at second Chart reference (different chart within same NM)
-  let firstChartLine = -1;
-  for (let i = 0; i < lines.length; i++) {
-    if (/^Chart\s+\d/.test(lines[i])) {
-      if (firstChartLine === -1) {
-        firstChartLine = i;
-      } else {
-        lines = lines.slice(0, i);
-        break;
-      }
-    }
-  }
-
-  // Visual formatting: blank lines before instructions, indent sub-items
+  // Visual formatting: blank lines before instructions and chart refs, indent sub-items
   const result = [];
   for (const line of lines) {
     if (/^(Insert|Delete|Move|Amend|Add|Remove|Substitute|Replace)\s/i.test(line) && result.length > 0) {
