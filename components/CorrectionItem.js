@@ -1,12 +1,36 @@
+// Clean up raw PDF-extracted NtM text for readable display.
+// Joins Admiralty depth subscripts (e.g. "9\n8" = 9.8m → "9.8"),
+// re-attaches comma continuations, and joins coordinate lines.
+function formatExcerpt(raw) {
+  if (!raw) return "";
+  let text = raw;
+
+  // Join Admiralty depth subscripts: "9\n8" (meaning 9.8m) → "9.8"
+  text = text.replace(/(\d)\n(\d)(?=[^0-9]|$)/gm, "$1.$2");
+
+  // Space between depth and parenthetical ref: "7.9(a)" → "7.9 (a)"
+  text = text.replace(/(\d\.\d)(\()/g, "$1 $2");
+
+  // Join comma-starting lines to previous line
+  text = text.replace(/\n\s*,\s*/g, ", ");
+
+  // Join coordinate lines (leading whitespace + degrees) to previous line
+  text = text.replace(/\n\s+(\d{1,3}°)/g, " $1");
+
+  // Collapse multiple spaces
+  text = text.replace(/[ \t]{2,}/g, " ");
+  text = text.split("\n").map(l => l.trim()).filter(Boolean).join("\n");
+
+  return text;
+}
+
 export default function CorrectionItem({ correction }) {
-  // Parse the excerpt: first line is typically the NM title/subject,
-  // remainder is the chart-specific correction detail
-  const lines = (correction.excerpt || "").split("\n").filter(Boolean);
+  const formatted = formatExcerpt(correction.excerpt);
+  const lines = formatted.split("\n").filter(Boolean);
   let title = "";
   let detail = "";
 
   if (lines.length > 0) {
-    // First line usually contains NM number + subject (e.g. "759    ENGLAND - East Coast - ...")
     title = lines[0].replace(/^\d+\*?\s+/, "").trim();
     detail = lines.slice(1).join("\n").trim();
   }
