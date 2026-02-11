@@ -1,6 +1,4 @@
-// Clean up raw PDF-extracted NtM text for readable display.
-// Joins Admiralty depth subscripts (e.g. "9\n8" = 9.8m → "9.8"),
-// re-attaches comma continuations, and joins coordinate lines.
+// Clean up raw PDF-extracted NtM correction text for readable display.
 function formatExcerpt(raw) {
   if (!raw) return "";
   let text = raw;
@@ -17,11 +15,32 @@ function formatExcerpt(raw) {
   // Join coordinate lines (leading whitespace + degrees) to previous line
   text = text.replace(/\n\s+(\d{1,3}°)/g, " $1");
 
-  // Collapse multiple spaces
+  // Collapse multiple spaces, trim lines
   text = text.replace(/[ \t]{2,}/g, " ");
-  text = text.split("\n").map(l => l.trim()).filter(Boolean).join("\n");
+  let lines = text.split("\n").map(l => l.trim()).filter(Boolean);
 
-  return text;
+  // Truncate at the next NM entry (line like "764*  ENGLAND - ...")
+  const nextNmIdx = lines.findIndex((l, i) => i > 0 && /^\d+\*?\s{2,}[A-Z]/.test(l));
+  if (nextNmIdx > 0) lines = lines.slice(0, nextNmIdx);
+
+  // Add blank line before instruction keywords and chart refs for readability
+  const result = [];
+  for (const line of lines) {
+    if (/^(Insert|Delete|Move|Amend|Add|Remove|Substitute|Replace)\s/i.test(line) && result.length > 0) {
+      result.push("");
+    }
+    if (/^Chart\s+\d/.test(line) && result.length > 0) {
+      result.push("");
+    }
+    // Indent sub-items: (a), (b), etc.
+    if (/^\([a-z]\)/.test(line)) {
+      result.push("    " + line);
+    } else {
+      result.push(line);
+    }
+  }
+
+  return result.join("\n").trim();
 }
 
 export default function CorrectionItem({ correction }) {
