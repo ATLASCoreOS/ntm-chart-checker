@@ -3,8 +3,15 @@ function formatExcerpt(raw) {
   if (!raw) return "";
   let text = raw;
 
+  // Remove page markers like "Wk08/26\nII\n2\n.40" or "Wk08/26 II 2.9"
+  text = text.replace(/Wk\d{2}\/\d{2}\s*\n?\s*II\s*\n?[\d\s.]*\n?/g, "");
+
   // Join Admiralty depth subscripts: "9\n8" (meaning 9.8m) → "9.8"
   text = text.replace(/(\d)\n(\d)(?=[^0-9]|$)/gm, "$1.$2");
+
+  // Handle concatenated depth subscripts from PDF extraction:
+  // "depth, 98" → "depth, 9.8" and "depth 98" → "depth 9.8"
+  text = text.replace(/(depth,?\s+)(\d)(\d)(?=[\s,.)(\n]|$)/gi, "$1$2.$3");
 
   // Space between depth and parenthetical ref: "7.9(a)" → "7.9 (a)"
   text = text.replace(/(\d\.\d)(\()/g, "$1 $2");
