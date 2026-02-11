@@ -3,7 +3,12 @@ import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { validateCharts, DEFAULT_CHARTS } from "@/lib/charts";
 import { fetchWeeklyPage, parsePageLinks, identifyPDFs } from "@/lib/scraper";
-import { downloadAndParsePDF, findCorrections, findTPNotices } from "@/lib/parser";
+import {
+  downloadAndParsePDF,
+  findCorrections,
+  findTPNotices,
+  findTPInForce,
+} from "@/lib/parser";
 
 export const maxDuration = 60;
 
@@ -41,70 +46,71 @@ export async function POST() {
 
     let corrections = {};
     let tpNotices = {};
+    let tpInForce = {};
     for (const chart of charts) {
       corrections[chart] = [];
       tpNotices[chart] = [];
+      tpInForce[chart] = [];
     }
 
-    // 4. Parse weekly NtM PDF
+    let parsedWeekly = false;
+
+    // 4. Parse weekly NtM PDF (contains Section I, IA, II, III, IV, V)
     if (weeklyNtm) {
       try {
         const text = await downloadAndParsePDF(weeklyNtm.url);
-        const corr = findCorrections(text, charts);
-        const tp = findTPNotices(text, charts);
 
-        // Merge
-        for (const chart of charts) {
-          corrections[chart] = [...corrections[chart], ...corr[chart]];
-          tpNotices[chart] = [...tpNotices[chart], ...tp[chart]];
-        }
+        // Section II: corrections + new T&P notices
+        corrections = findCorrections(text, charts);
+        tpNotices = findTPNotices(text, charts);
+
+        // Section IA: T&P notices currently in force
+        tpInForce = findTPInForce(text, charts);
+
+        parsedWeekly = true;
       } catch (err) {
         console.error("Error parsing weekly NtM PDF:", err.message);
       }
     }
 
-    // 5. Parse Section II PDF
-    if (sectionII) {
+    // 5. Only parse standalone Section II PDF if weekly NtM failed
+    if (!parsedWeekly && sectionII) {
       try {
         const text = await downloadAndParsePDF(sectionII.url);
-        const corr = findCorrections(text, charts);
-
-        // Merge (deduplicate)
-        for (const chart of charts) {
-          for (const c of corr[chart]) {
-            const isDupe = corrections[chart].some(
-              (existing) =>
-                existing.excerpt.slice(0, 200) === c.excerpt.slice(0, 200)
-            );
-            if (!isDupe) {
-              corrections[chart].push(c);
-            }
-          }
-        }
+        corrections = findCorrections(text, charts);
+        tpNotices = findTPNotices(text, charts);
       } catch (err) {
         console.error("Error parsing Section II PDF:", err.message);
       }
     }
 
-    // 6. Chart block PDFs
+    // 6. Chart block PDFs — add as corrections if not already found by NM number
     for (const block of chartBlocks) {
       const chart = block.chartNum;
       if (corrections[chart]) {
         const nmMatch = block.filename.match(/NM(\d+)/i);
-        corrections[chart].push({
-          nmNumber: nmMatch ? nmMatch[1] : "—",
-          excerpt: `Chart block correction: ${block.filename}`,
-          isPdfBlock: true,
-        });
+        const nmNumber = nmMatch ? nmMatch[1] : "—";
+        const isDupe = corrections[chart].some(
+          (c) => c.nmNumber === nmNumber
+        );
+        if (!isDupe) {
+          corrections[chart].push({
+            nmNumber,
+            excerpt: `Chart block correction: ${block.filename}`,
+            isPdfBlock: true,
+          });
+        }
       }
     }
 
     // 7. Build response
     let totalCorrections = 0;
     let totalTP = 0;
+    let totalTPInForce = 0;
     for (const chart of charts) {
       totalCorrections += corrections[chart].length;
       totalTP += tpNotices[chart].length;
+      totalTPInForce += tpInForce[chart].length;
     }
 
     const durationMs = Date.now() - startTime;
@@ -113,8 +119,10 @@ export async function POST() {
       charts,
       corrections,
       tpNotices,
+      tpInForce,
       totalCorrections,
       totalTP,
+      totalTPInForce,
       allBlockChartNums: allChartBlocks.map((b) => b.chartNum),
       matchingBlocks: chartBlocks.map((b) => b.filename),
       pdfCount: links.length,

@@ -1,7 +1,7 @@
 "use client";
 
 export default function ResultsSummary({ result }) {
-  const { weekInfo, totalCorrections, totalTP, charts, pdfCount, durationMs, checkedAt, weeklyNtmFile, allBlockChartNums, matchingBlocks } = result;
+  const { weekInfo, totalCorrections, totalTP, totalTPInForce, charts, pdfCount, durationMs, checkedAt, weeklyNtmFile, allBlockChartNums, matchingBlocks } = result;
 
   const date = new Date(checkedAt).toLocaleString("en-GB", {
     day: "2-digit",
@@ -25,18 +25,23 @@ export default function ResultsSummary({ result }) {
         Checked: {date} &bull; {pdfCount} PDFs &bull; {(durationMs / 1000).toFixed(1)}s
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <StatBox
           value={totalCorrections}
-          label="New Correct."
+          label="Corrections"
           color={totalCorrections === 0 ? "green" : "amber"}
         />
         <StatBox
           value={totalTP}
-          label="T&P In Force"
+          label="New T&P"
           color={totalTP === 0 ? "green" : "amber"}
         />
-        <StatBox value={charts.length} label="Charts Checked" color="blue" />
+        <StatBox
+          value={totalTPInForce || 0}
+          label="T&P In Force"
+          color={(totalTPInForce || 0) === 0 ? "green" : "blue"}
+        />
+        <StatBox value={charts.length} label="Charts" color="blue" />
       </div>
 
       {matchingBlocks && matchingBlocks.length > 0 ? (

@@ -4,18 +4,20 @@ import { useState } from "react";
 import CorrectionItem from "./CorrectionItem";
 import TPItem from "./TPItem";
 
-export default function ChartResult({ chart, corrections, tpNotices }) {
-  const hasFindings = corrections.length > 0 || tpNotices.length > 0;
+export default function ChartResult({ chart, corrections, tpNotices, tpInForce = [] }) {
+  const hasFindings = corrections.length > 0 || tpNotices.length > 0 || tpInForce.length > 0;
   const [open, setOpen] = useState(hasFindings);
 
+  const totalFindings = corrections.length + tpNotices.length + tpInForce.length;
   let badgeText = "Clear";
   let badgeClass = "bg-green-100 text-green-700";
 
   if (corrections.length > 0) {
     badgeText = `${corrections.length} correction${corrections.length > 1 ? "s" : ""}`;
     badgeClass = "bg-red-100 text-red-700";
-  } else if (tpNotices.length > 0) {
-    badgeText = `${tpNotices.length} T&P in force`;
+  } else if (tpNotices.length > 0 || tpInForce.length > 0) {
+    const count = tpNotices.length + tpInForce.length;
+    badgeText = `${count} T&P`;
     badgeClass = "bg-amber-100 text-amber-700";
   }
 
@@ -55,11 +57,30 @@ export default function ChartResult({ chart, corrections, tpNotices }) {
           {tpNotices.length > 0 && (
             <div className="mt-4">
               <h4 className="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-2">
-                T&P Notices In Force
+                New T&P Notices This Week
               </h4>
               <div className="space-y-2">
                 {tpNotices.map((tp, i) => (
                   <TPItem key={i} tp={tp} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {tpInForce.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2">
+                T&P Notices In Force ({tpInForce.length})
+              </h4>
+              <div className="space-y-2">
+                {tpInForce.map((tp, i) => (
+                  <div key={i} className="border-l-[3px] border-blue-400 bg-blue-50 rounded-r-lg p-3">
+                    <div className="text-xs font-bold text-slate-600">{tp.nmNumber}</div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Charts: {tp.charts}
+                      {tp.subject && <span> — {tp.subject}</span>}
+                    </p>
+                  </div>
                 ))}
               </div>
             </div>

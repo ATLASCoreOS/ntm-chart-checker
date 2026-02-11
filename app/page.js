@@ -128,6 +128,7 @@ export default function Dashboard() {
                     chart={chart}
                     corrections={result.corrections[chart] || []}
                     tpNotices={result.tpNotices[chart] || []}
+                    tpInForce={result.tpInForce?.[chart] || []}
                   />
                 ))}
               </div>

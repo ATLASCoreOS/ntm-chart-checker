@@ -45,6 +45,7 @@ export default function CheckHistoryCard({ check, expanded, expandedResult, onEx
                     chart={chart}
                     corrections={expandedResult.corrections[chart] || []}
                     tpNotices={expandedResult.tpNotices[chart] || []}
+                    tpInForce={expandedResult.tpInForce?.[chart] || []}
                   />
                 ))}
               </div>
