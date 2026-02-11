@@ -63,11 +63,15 @@ export async function POST() {
         // Section II: corrections + new T&P notices
         corrections = findCorrections(text, charts);
         tpNotices = findTPNotices(text, charts);
-
-        // Section IA: T&P notices currently in force
-        tpInForce = findTPInForce(text, charts);
-
         parsedWeekly = true;
+
+        // Section IA: T&P notices currently in force (separate try/catch
+        // so a failure here doesn't prevent corrections from being used)
+        try {
+          tpInForce = findTPInForce(text, charts);
+        } catch (tpErr) {
+          console.error("Error parsing T&P In Force:", tpErr.message);
+        }
       } catch (err) {
         console.error("Error parsing weekly NtM PDF:", err.message);
       }
