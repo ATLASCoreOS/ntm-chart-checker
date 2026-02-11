@@ -1,17 +1,8 @@
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
-  weight: ["400", "600", "700"],
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "NtM Chart Correction Checker",
@@ -21,12 +12,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+    <html lang="en">
       <body className={inter.className}>
         <SessionProvider>
-          <div className="min-h-screen bg-navy-950">
-            {children}
-          </div>
+          <div className="min-h-screen">{children}</div>
         </SessionProvider>
       </body>
     </html>

@@ -14,26 +14,22 @@ export default function ResultsSummary({ result }) {
   });
 
   return (
-    <div className="card-admiralty p-5">
-      <div className="flex items-start justify-between mb-3">
-        <h2 className="font-heading text-lg font-semibold text-brass">
-          Weekly NtM Report
-        </h2>
+    <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900">
+            Weekly NtM Report
+          </h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Week {String(weekInfo.week).padStart(2, "0")}/{weekInfo.year}
+            <span className="mx-2 text-gray-300">|</span>
+            {weeklyNtmFile || "unknown"}
+          </p>
+        </div>
         <DownloadPDFButton result={result} />
       </div>
 
-      <div className="gold-line mb-3" />
-
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-1">
-        <span className="font-heading text-base font-semibold text-parchment">
-          Week {String(weekInfo.week).padStart(2, "0")}/{weekInfo.year}
-        </span>
-        <span className="text-xs text-sea-slate">
-          {weeklyNtmFile || "unknown"}
-        </span>
-      </div>
-
-      <p className="text-xs text-sea-slate mb-4">
+      <p className="text-xs text-gray-400 mb-4">
         Checked: {date} &bull; {pdfCount} PDFs parsed &bull; {(durationMs / 1000).toFixed(1)}s
       </p>
 
@@ -57,11 +53,11 @@ export default function ResultsSummary({ result }) {
       </div>
 
       {matchingBlocks && matchingBlocks.length > 0 ? (
-        <p className="text-xs text-signal-red font-bold">
+        <p className="text-xs text-red-600 font-medium">
           Chart block PDFs match your folio: {matchingBlocks.join(", ")}
         </p>
       ) : allBlockChartNums && allBlockChartNums.length > 0 ? (
-        <p className="text-xs text-sea-slate">
+        <p className="text-xs text-gray-400">
           No chart block correction PDFs match your folio. Blocks issued for:{" "}
           {allBlockChartNums.join(", ")}.
         </p>
@@ -72,17 +68,17 @@ export default function ResultsSummary({ result }) {
 
 function StatBox({ value, label, color }) {
   const styles = {
-    green: "bg-signal-green-bg border-signal-green/30 text-signal-green",
-    red: "bg-signal-red-bg border-signal-red/30 text-signal-red",
-    amber: "bg-signal-amber-bg border-signal-amber/30 text-signal-amber",
-    blue: "bg-signal-blue-bg border-signal-blue/30 text-signal-blue",
-    neutral: "bg-navy-700 border-navy-600 text-parchment",
+    green: "bg-green-50 border-green-200 text-green-700",
+    red: "bg-red-50 border-red-200 text-red-700",
+    amber: "bg-amber-50 border-amber-200 text-amber-700",
+    blue: "bg-blue-50 border-blue-200 text-blue-700",
+    neutral: "bg-gray-50 border-gray-200 text-gray-700",
   }[color];
 
   return (
-    <div className={`rounded-md p-4 text-center border ${styles}`}>
-      <div className="text-3xl font-bold">{value}</div>
-      <div className="text-[11px] uppercase font-bold tracking-wider text-sea-slate mt-1">
+    <div className={`rounded-lg p-3 text-center border ${styles}`}>
+      <div className="text-2xl font-bold">{value}</div>
+      <div className="text-[11px] uppercase font-medium tracking-wider text-gray-500 mt-0.5">
         {label}
       </div>
     </div>

@@ -103,7 +103,7 @@ export default function Dashboard() {
 
         {error && (
           <div
-            className="bg-signal-red-bg border border-signal-red/30 text-signal-red rounded-lg p-4 text-sm"
+            className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-sm"
             role="alert"
           >
             Error: {error}
@@ -114,8 +114,8 @@ export default function Dashboard() {
           <>
             <ResultsSummary result={result} />
 
-            <div className="card-admiralty p-5">
-              <h2 className="font-heading text-lg font-semibold text-brass mb-3">
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+              <h2 className="text-base font-semibold text-gray-900 mb-3">
                 Chart-by-Chart
               </h2>
               <div className="space-y-2">

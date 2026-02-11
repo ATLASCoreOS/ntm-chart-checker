@@ -33,10 +33,8 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="font-heading text-xl font-semibold text-parchment">Log In</h2>
-
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-parchment-muted mb-1">
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
           Email
         </label>
         <input
@@ -46,12 +44,12 @@ export default function LoginForm() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
           required
-          className="input-maritime"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
         />
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-parchment-muted mb-1">
+        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
           Password
         </label>
         <input
@@ -60,25 +58,25 @@ export default function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="input-maritime"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
         />
       </div>
 
       {error && (
-        <p className="text-signal-red text-sm" role="alert">{error}</p>
+        <p className="text-red-600 text-sm" role="alert">{error}</p>
       )}
 
       <button
         type="submit"
         disabled={submitting}
-        className="btn-brass w-full py-3"
+        className="w-full py-2.5 bg-navy text-white text-sm font-medium rounded-md hover:bg-navy-800 disabled:opacity-50 transition-colors"
       >
         {submitting ? "Logging in..." : "Log In"}
       </button>
 
-      <p className="text-sm text-sea-slate text-center">
+      <p className="text-sm text-gray-500 text-center">
         Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-brass hover:text-brass-light transition-colors">
+        <Link href="/register" className="text-navy hover:underline">
           Register
         </Link>
       </p>

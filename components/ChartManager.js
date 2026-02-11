@@ -27,14 +27,14 @@ export default function ChartManager({ charts, chartsLoading, onChartsChange }) 
   }
 
   return (
-    <div className="card-maritime p-5">
+    <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xs font-semibold text-brass uppercase tracking-wider">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
           Your Charts
         </h2>
         <button
           onClick={() => setEditing(!editing)}
-          className="text-sm text-brass hover:text-brass-light transition-colors"
+          className="text-sm text-navy hover:underline transition-colors"
         >
           {editing ? "Done" : "Edit"}
         </button>
@@ -43,7 +43,7 @@ export default function ChartManager({ charts, chartsLoading, onChartsChange }) 
       {chartsLoading ? (
         <div className="flex gap-2 flex-wrap">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-8 w-16 bg-navy-700 rounded-md animate-pulse" />
+            <div key={i} className="h-8 w-16 bg-gray-100 rounded-md animate-pulse" />
           ))}
         </div>
       ) : (
@@ -52,14 +52,14 @@ export default function ChartManager({ charts, chartsLoading, onChartsChange }) 
             {charts.map((chart) => (
               <span
                 key={chart}
-                className="inline-flex items-center gap-1 px-3 py-1.5 bg-navy-700 border border-navy-600 rounded-md text-sm font-medium text-parchment"
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium text-gray-800"
               >
                 {chart}
                 {editing && (
                   <button
                     onClick={() => removeChart(chart)}
                     aria-label={`Remove chart ${chart}`}
-                    className="text-sea-slate hover:text-signal-red ml-1 transition-colors"
+                    className="text-gray-400 hover:text-red-500 ml-1 transition-colors"
                   >
                     &times;
                   </button>
@@ -67,7 +67,7 @@ export default function ChartManager({ charts, chartsLoading, onChartsChange }) 
               </span>
             ))}
             {charts.length === 0 && (
-              <p className="text-sm text-sea-slate">No charts added yet.</p>
+              <p className="text-sm text-gray-400">No charts added yet.</p>
             )}
           </div>
 
@@ -78,12 +78,12 @@ export default function ChartManager({ charts, chartsLoading, onChartsChange }) 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Add chart number..."
-                className="input-maritime flex-1 text-sm"
+                placeholder="Chart number..."
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
               />
               <button
                 onClick={addChart}
-                className="px-4 py-2 bg-brass text-navy-900 text-sm font-semibold rounded-md hover:bg-brass-light transition-colors"
+                className="px-4 py-2 bg-navy text-white text-sm font-medium rounded-md hover:bg-navy-800 transition-colors"
               >
                 Add
               </button>

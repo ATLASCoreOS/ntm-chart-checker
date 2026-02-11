@@ -2,61 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body {
-    @apply bg-navy-950 text-parchment font-body;
-  }
-
-  ::-webkit-scrollbar {
-    width: 8px;
-  }
-  ::-webkit-scrollbar-track {
-    @apply bg-navy-900;
-  }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-navy-600 rounded;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-navy-500;
-  }
-}
-
-@layer components {
-  .card-maritime {
-    @apply bg-navy-800 border border-navy-600 rounded-lg;
-  }
-
-  .card-admiralty {
-    @apply bg-navy-800 border border-brass-dark rounded-lg;
-  }
-
-  .input-maritime {
-    @apply w-full px-3 py-2.5 bg-navy-700 border border-navy-600 rounded-md
-           text-parchment placeholder-sea-slate
-           focus:outline-none focus:ring-2 focus:ring-brass focus:border-brass
-           transition-colors;
-  }
-
-  .btn-brass {
-    @apply px-5 py-3 bg-brass text-navy-900 font-semibold rounded-md
-           hover:bg-brass-light active:bg-brass-dark
-           disabled:bg-brass-muted disabled:text-navy-700 disabled:cursor-not-allowed
-           transition-all duration-150;
-  }
-
-  .btn-secondary {
-    @apply px-4 py-2 bg-navy-700 border border-navy-600 text-parchment-muted
-           rounded-md hover:bg-navy-600 hover:text-parchment
-           transition-colors;
-  }
-
-  .gold-line {
-    @apply h-[2px] bg-gradient-to-r from-transparent via-brass to-transparent;
-  }
-
-  .badge {
-    @apply text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wide;
-  }
+body {
+  background-color: #f8f9fb;
+  color: #111827;
 }
 
 @keyframes progress {
