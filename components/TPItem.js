@@ -1,11 +1,23 @@
 export default function TPItem({ tp }) {
   return (
-    <div className="border-l-[3px] border-orange-400 bg-orange-50 rounded-r-lg p-3">
-      <div className="text-xs font-semibold text-gray-800">{tp.nmNumber}</div>
-      <p className="text-xs text-gray-600 mt-1">
-        Charts: {tp.charts}
-        {tp.subject && <span> — {tp.subject}</span>}
-      </p>
+    <div className="border border-orange-200 rounded-lg overflow-hidden">
+      <div className="bg-orange-50 px-4 py-2.5">
+        <span className="text-sm font-bold text-orange-800">
+          {tp.nmNumber}
+        </span>
+      </div>
+      <div className="px-4 py-3 bg-white space-y-1.5">
+        {tp.subject && (
+          <p className="text-xs text-gray-700">
+            <span className="font-medium text-gray-500 mr-1.5">Subject:</span>
+            {tp.subject}
+          </p>
+        )}
+        <p className="text-xs text-gray-700">
+          <span className="font-medium text-gray-500 mr-1.5">Charts:</span>
+          {tp.charts}
+        </p>
+      </div>
     </div>
   );
 }

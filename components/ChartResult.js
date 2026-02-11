@@ -46,19 +46,24 @@ export default function ChartResult({ chart, corrections, tpNotices, tpInForce =
           )}
 
           {corrections.length > 0 && (
-            <div className="mt-3 space-y-2">
-              {corrections.map((corr, i) => (
-                <CorrectionItem key={i} correction={corr} />
-              ))}
+            <div className="mt-3">
+              <h4 className="text-xs font-semibold text-red-700 uppercase tracking-wider mb-2">
+                Corrections
+              </h4>
+              <div className="space-y-3">
+                {corrections.map((corr, i) => (
+                  <CorrectionItem key={i} correction={corr} />
+                ))}
+              </div>
             </div>
           )}
 
           {tpNotices.length > 0 && (
             <div className="mt-4">
-              <h4 className="text-xs font-semibold text-orange-600 uppercase tracking-wider mb-2">
+              <h4 className="text-xs font-semibold text-orange-700 uppercase tracking-wider mb-2">
                 New T&P Notices This Week
               </h4>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {tpNotices.map((tp, i) => (
                   <TPItem key={i} tp={tp} />
                 ))}
@@ -68,17 +73,29 @@ export default function ChartResult({ chart, corrections, tpNotices, tpInForce =
 
           {tpInForce.length > 0 && (
             <div className="mt-4">
-              <h4 className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2">
+              <h4 className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2">
                 T&P Notices In Force ({tpInForce.length})
               </h4>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {tpInForce.map((tp, i) => (
-                  <div key={i} className="border-l-[3px] border-blue-400 bg-blue-50 rounded-r-lg p-3">
-                    <div className="text-xs font-semibold text-gray-800">{tp.nmNumber}</div>
-                    <p className="text-xs text-gray-600 mt-1">
-                      Charts: {tp.charts}
-                      {tp.subject && <span> — {tp.subject}</span>}
-                    </p>
+                  <div key={i} className="border border-blue-200 rounded-lg overflow-hidden">
+                    <div className="bg-blue-50 px-4 py-2.5">
+                      <span className="text-sm font-bold text-blue-800">
+                        {tp.nmNumber}
+                      </span>
+                    </div>
+                    <div className="px-4 py-3 bg-white space-y-1.5">
+                      {tp.subject && (
+                        <p className="text-xs text-gray-700">
+                          <span className="font-medium text-gray-500 mr-1.5">Subject:</span>
+                          {tp.subject}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-700">
+                        <span className="font-medium text-gray-500 mr-1.5">Charts:</span>
+                        {tp.charts}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
