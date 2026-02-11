@@ -11,7 +11,7 @@ function formatExcerpt(raw) {
 
   // Join comma continuations: lines starting with comma, and lines after a trailing comma
   text = text.replace(/\n\s*,\s*/g, ", ");
-  text = text.replace(/,\n\s*/g, ", ");
+  text = text.replace(/,[ \t]*\n\s*/g, ", ");
 
   // Join coordinate lines (leading whitespace + degrees) to previous line
   text = text.replace(/\n\s+(\d{1,3}°)/g, " $1");
