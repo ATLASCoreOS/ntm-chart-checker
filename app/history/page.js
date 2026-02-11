@@ -51,7 +51,6 @@ export default function HistoryPage() {
     }
   }
 
-  // Group checks by week
   const grouped = {};
   for (const check of checks) {
     const key = `${check.weekYear}-${check.weekNumber}`;
@@ -70,35 +69,35 @@ export default function HistoryPage() {
     <>
       <NavBar activePage="history" />
 
-      <div className="space-y-4">
-        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-8 space-y-5">
+        <h2 className="font-heading text-lg font-semibold text-brass">
           Check History
         </h2>
 
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-xl p-4 shadow-sm animate-pulse">
-                <div className="h-4 bg-slate-200 rounded w-1/3 mb-2" />
-                <div className="h-3 bg-slate-200 rounded w-2/3" />
+              <div key={i} className="card-maritime p-5 animate-pulse">
+                <div className="h-4 bg-navy-700 rounded w-1/3 mb-2" />
+                <div className="h-3 bg-navy-700 rounded w-2/3" />
               </div>
             ))}
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 text-sm" role="alert">
+          <div className="bg-signal-red-bg border border-signal-red/30 text-signal-red rounded-lg p-4 text-sm" role="alert">
             {error}
           </div>
         ) : checks.length === 0 ? (
-          <div className="bg-white rounded-xl p-8 shadow-sm text-center">
-            <p className="text-slate-500 text-sm">No checks yet.</p>
-            <Link href="/" className="text-blue-600 text-sm hover:underline mt-2 inline-block">
+          <div className="card-maritime p-8 text-center">
+            <p className="text-sea-slate text-sm">No checks yet.</p>
+            <Link href="/" className="text-brass text-sm hover:text-brass-light mt-2 inline-block transition-colors">
               Run your first check from the dashboard
             </Link>
           </div>
         ) : (
           weeks.map((week) => (
             <div key={`${week.weekYear}-${week.weekNumber}`}>
-              <h3 className="text-base font-semibold text-navy mb-2">
+              <h3 className="font-heading text-base font-semibold text-parchment mb-2">
                 Week {week.weekNumber}/{week.weekYear}
               </h3>
               <div className="space-y-2">

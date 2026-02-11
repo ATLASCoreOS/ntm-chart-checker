@@ -13,15 +13,15 @@ export default function CheckHistoryCard({ check, expanded, expandedResult, onEx
   });
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-      <div className="p-4">
-        <p className="text-sm font-medium text-slate-900">{date}</p>
-        <p className="text-xs text-slate-500 mt-1">
+    <div className="card-maritime overflow-hidden">
+      <div className="p-5">
+        <p className="text-sm font-medium text-parchment">{date}</p>
+        <p className="text-xs text-sea-slate mt-1">
           {check.charts.length} charts &bull; {check.totalCorrections} correction{check.totalCorrections !== 1 ? "s" : ""} &bull; {check.totalTP} T&P
         </p>
         <button
           onClick={() => onExpand(check.id)}
-          className="text-xs text-blue-600 hover:underline mt-2"
+          className="text-xs text-brass hover:text-brass-light mt-2 transition-colors"
           aria-expanded={expanded}
         >
           {expanded ? "Hide details" : "▸ View details"}
@@ -29,10 +29,10 @@ export default function CheckHistoryCard({ check, expanded, expandedResult, onEx
       </div>
 
       {expanded && (
-        <div className="border-t border-slate-100 p-4">
+        <div className="border-t border-navy-600 p-5">
           {loadingDetail ? (
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <span className="inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center gap-2 text-xs text-sea-slate">
+              <span className="inline-block w-4 h-4 border-2 border-brass border-t-transparent rounded-full animate-spin" />
               Loading results...
             </div>
           ) : expandedResult ? (

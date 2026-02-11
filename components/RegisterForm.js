@@ -44,7 +44,6 @@ export default function RegisterForm() {
         return;
       }
 
-      // Auto-login
       const loginRes = await signIn("credentials", {
         email,
         password,
@@ -65,11 +64,11 @@ export default function RegisterForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-xl font-semibold text-slate-900">Create Account</h2>
+      <h2 className="font-heading text-xl font-semibold text-parchment">Create Account</h2>
 
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">
-          Name <span className="text-slate-400">(optional)</span>
+        <label htmlFor="name" className="block text-sm font-medium text-parchment-muted mb-1">
+          Name <span className="text-sea-slate">(optional)</span>
         </label>
         <input
           id="name"
@@ -77,12 +76,12 @@ export default function RegisterForm() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Your name"
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input-maritime"
         />
       </div>
 
       <div>
-        <label htmlFor="reg-email" className="block text-sm font-medium text-slate-700 mb-1">
+        <label htmlFor="reg-email" className="block text-sm font-medium text-parchment-muted mb-1">
           Email
         </label>
         <input
@@ -92,12 +91,12 @@ export default function RegisterForm() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
           required
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input-maritime"
         />
       </div>
 
       <div>
-        <label htmlFor="reg-password" className="block text-sm font-medium text-slate-700 mb-1">
+        <label htmlFor="reg-password" className="block text-sm font-medium text-parchment-muted mb-1">
           Password
         </label>
         <input
@@ -106,13 +105,13 @@ export default function RegisterForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input-maritime"
         />
-        <p className="text-xs text-slate-400 mt-1">Minimum 8 characters</p>
+        <p className="text-xs text-sea-slate mt-1">Minimum 8 characters</p>
       </div>
 
       <div>
-        <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-700 mb-1">
+        <label htmlFor="confirm-password" className="block text-sm font-medium text-parchment-muted mb-1">
           Confirm Password
         </label>
         <input
@@ -121,25 +120,25 @@ export default function RegisterForm() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input-maritime"
         />
       </div>
 
       {error && (
-        <p className="text-red-600 text-sm" role="alert">{error}</p>
+        <p className="text-signal-red text-sm" role="alert">{error}</p>
       )}
 
       <button
         type="submit"
         disabled={submitting}
-        className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-600 disabled:opacity-50 transition-all"
+        className="btn-brass w-full py-3"
       >
         {submitting ? "Creating account..." : "Create Account"}
       </button>
 
-      <p className="text-sm text-slate-500 text-center">
+      <p className="text-sm text-sea-slate text-center">
         Already have an account?{" "}
-        <Link href="/login" className="text-blue-600 hover:underline">
+        <Link href="/login" className="text-brass hover:text-brass-light transition-colors">
           Log in
         </Link>
       </p>

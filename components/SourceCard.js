@@ -1,18 +1,18 @@
 export default function SourceCard({ sourceUrl }) {
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm text-center">
-      <p className="text-xs text-slate-500">
+    <div className="card-maritime p-4 text-center">
+      <p className="text-xs text-sea-slate">
         Source:{" "}
         <a
           href={sourceUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 hover:underline"
+          className="text-brass hover:text-brass-light transition-colors"
         >
           {sourceUrl.replace("https://", "")}
         </a>
       </p>
-      <p className="text-xs text-slate-400 mt-1">
+      <p className="text-xs text-sea-slate/70 mt-1">
         Always verify corrections against the original UKHO bulletin.
       </p>
     </div>

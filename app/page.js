@@ -18,7 +18,6 @@ export default function Dashboard() {
   const [cooldown, setCooldown] = useState(false);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
-  // Load folio on mount
   useEffect(() => {
     async function loadFolio() {
       try {
@@ -34,7 +33,6 @@ export default function Dashboard() {
     loadFolio();
   }, []);
 
-  // Save folio to server
   const saveFolio = useCallback(
     async (newCharts) => {
       const prev = charts;
@@ -53,7 +51,6 @@ export default function Dashboard() {
     [charts]
   );
 
-  // Run check
   async function runCheck() {
     setLoading(true);
     setError(null);
@@ -89,7 +86,7 @@ export default function Dashboard() {
     <>
       <NavBar activePage="dashboard" />
 
-      <div className="space-y-4">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-8 space-y-5">
         <ChartManager
           charts={charts}
           chartsLoading={chartsLoading}
@@ -106,7 +103,7 @@ export default function Dashboard() {
 
         {error && (
           <div
-            className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 text-sm"
+            className="bg-signal-red-bg border border-signal-red/30 text-signal-red rounded-lg p-4 text-sm"
             role="alert"
           >
             Error: {error}
@@ -117,8 +114,8 @@ export default function Dashboard() {
           <>
             <ResultsSummary result={result} />
 
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+            <div className="card-admiralty p-5">
+              <h2 className="font-heading text-lg font-semibold text-brass mb-3">
                 Chart-by-Chart
               </h2>
               <div className="space-y-2">

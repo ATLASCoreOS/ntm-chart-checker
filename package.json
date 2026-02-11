@@ -9,19 +9,20 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "next": "^14.2.0",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
-    "pdf-parse": "^1.1.1",
-    "next-auth": "5.0.0-beta.25",
     "@auth/prisma-adapter": "^2.7.4",
     "@prisma/client": "^5.22.0",
-    "bcryptjs": "^2.4.3"
+    "@react-pdf/renderer": "^4.3.2",
+    "bcryptjs": "^2.4.3",
+    "next": "^14.2.0",
+    "next-auth": "5.0.0-beta.25",
+    "pdf-parse": "^1.1.4",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
   },
   "devDependencies": {
-    "tailwindcss": "^3.4.0",
-    "postcss": "^8.4.0",
     "autoprefixer": "^10.4.0",
-    "prisma": "^5.22.0"
+    "postcss": "^8.4.0",
+    "prisma": "^5.22.0",
+    "tailwindcss": "^3.4.0"
   }
 }
