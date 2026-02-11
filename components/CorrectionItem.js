@@ -46,62 +46,81 @@ function formatExcerpt(raw) {
   return result.join("\n").trim();
 }
 
-// Parse formatted excerpt into structured sections for display
+// Parse formatted excerpt into structured sections for display.
+// Everything before the first action keyword (Insert/Delete/etc.) is header metadata.
+// Everything from the first action keyword onward is the instruction body.
 function parseExcerpt(raw) {
   const formatted = formatExcerpt(raw);
   if (!formatted) return { subject: "", source: "", previousUpdate: "", datum: "", body: "" };
 
   const lines = formatted.split("\n");
+
+  // Find where instruction body begins
+  let bodyStart = lines.length;
+  for (let i = 0; i < lines.length; i++) {
+    if (/^(Insert|Delete|Move|Amend|Add|Remove|Substitute|Replace)\s/i.test(lines[i].trim())) {
+      bodyStart = i;
+      break;
+    }
+  }
+
+  const headerLines = lines.slice(0, bodyStart);
+  const bodyLines = lines.slice(bodyStart);
+
+  // Parse header metadata
   let subject = "";
   let source = "";
   let previousUpdate = "";
   let datum = "";
-  const bodyLines = [];
-  let headerDone = false;
+  const extraLines = [];
 
-  for (const line of lines) {
+  for (const line of headerLines) {
     const trimmed = line.trim();
-    if (!trimmed && !headerDone) continue;
+    if (!trimmed) continue;
 
-    // First non-empty line: subject (strip NM number prefix if present)
-    if (!subject && !headerDone && trimmed) {
+    // First non-empty line: subject (strip NM number prefix)
+    if (!subject) {
       subject = trimmed.replace(/^\d+\*?\s+/, "").trim();
       continue;
     }
 
     // Source line
-    if (!headerDone && /^Source:/i.test(trimmed)) {
+    if (/^Source:/i.test(trimmed)) {
       source = trimmed.replace(/^Source:\s*/i, "").trim();
       continue;
     }
 
-    // Chart reference line — extract metadata then mark header done
-    if (!headerDone && /^Chart\s+\d/i.test(trimmed)) {
+    // Chart reference line
+    if (/^Chart\s+\d/i.test(trimmed)) {
       const prevMatch = trimmed.match(/\[\s*previous update\s+([^\]]+)\]/i);
       if (prevMatch) previousUpdate = prevMatch[1].trim();
       const datumMatch = trimmed.match(/(ETRS89|WGS84|ED50|OSGB36)\s*(DATUM)?/i);
       if (datumMatch) datum = datumMatch[0].trim();
-      headerDone = true;
       continue;
     }
 
-    // If we hit an action keyword without finding chart ref, mark header done
-    if (!headerDone && /^(Insert|Delete|Move|Amend|Add|Remove|Substitute|Replace)\s/i.test(trimmed)) {
-      headerDone = true;
+    // Previous update on its own line: "[ previous update 367/26 ] ETRS89 DATUM"
+    if (/\[\s*previous update/i.test(trimmed)) {
+      const prevMatch = trimmed.match(/\[\s*previous update\s+([^\]]+)\]/i);
+      if (prevMatch) previousUpdate = prevMatch[1].trim();
+      const datumMatch = trimmed.match(/(ETRS89|WGS84|ED50|OSGB36)\s*(DATUM)?/i);
+      if (datumMatch) datum = datumMatch[0].trim();
+      continue;
     }
 
-    if (headerDone) {
-      bodyLines.push(line);
+    // Standalone datum line
+    if (/^(ETRS89|WGS84|ED50|OSGB36)/i.test(trimmed)) {
+      datum = trimmed.trim();
+      continue;
     }
+
+    // Unrecognized header line — preserve it
+    extraLines.push(line);
   }
 
-  return {
-    subject,
-    source,
-    previousUpdate,
-    datum,
-    body: bodyLines.join("\n").trim(),
-  };
+  const allBody = [...extraLines, ...bodyLines].join("\n").trim();
+
+  return { subject, source, previousUpdate, datum, body: allBody };
 }
 
 export default function CorrectionItem({ correction }) {
