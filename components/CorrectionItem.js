@@ -9,21 +9,35 @@ function formatExcerpt(raw) {
   // Space between depth and parenthetical ref: "7.9(a)" → "7.9 (a)"
   text = text.replace(/(\d\.\d)(\()/g, "$1 $2");
 
-  // Join comma-starting lines to previous line
+  // Join comma continuations: lines starting with comma, and lines after a trailing comma
   text = text.replace(/\n\s*,\s*/g, ", ");
+  text = text.replace(/,\n\s*/g, ", ");
 
   // Join coordinate lines (leading whitespace + degrees) to previous line
   text = text.replace(/\n\s+(\d{1,3}°)/g, " $1");
 
-  // Collapse multiple spaces, trim lines
+  // Collapse multiple spaces, split into lines
   text = text.replace(/[ \t]{2,}/g, " ");
   let lines = text.split("\n").map(l => l.trim()).filter(Boolean);
 
-  // Truncate at the next NM entry (line like "764*  ENGLAND - ...")
-  const nextNmIdx = lines.findIndex((l, i) => i > 0 && /^\d+\*?\s{2,}[A-Z]/.test(l));
+  // Truncate at next NM entry (e.g. "764* ENGLAND - ...")
+  const nextNmIdx = lines.findIndex((l, i) => i > 0 && /^\d{3,5}\*?\s+[A-Z][A-Z]/.test(l));
   if (nextNmIdx > 0) lines = lines.slice(0, nextNmIdx);
 
-  // Add blank line before instruction keywords and chart refs for readability
+  // Truncate at second Chart reference (different chart within same NM)
+  let firstChartLine = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (/^Chart\s+\d/.test(lines[i])) {
+      if (firstChartLine === -1) {
+        firstChartLine = i;
+      } else {
+        lines = lines.slice(0, i);
+        break;
+      }
+    }
+  }
+
+  // Visual formatting: blank lines before instructions, indent sub-items
   const result = [];
   for (const line of lines) {
     if (/^(Insert|Delete|Move|Amend|Add|Remove|Substitute|Replace)\s/i.test(line) && result.length > 0) {
@@ -32,7 +46,6 @@ function formatExcerpt(raw) {
     if (/^Chart\s+\d/.test(line) && result.length > 0) {
       result.push("");
     }
-    // Indent sub-items: (a), (b), etc.
     if (/^\([a-z]\)/.test(line)) {
       result.push("    " + line);
     } else {
