@@ -6,6 +6,9 @@ function formatExcerpt(raw) {
   // Remove page markers like "Wk08/26\nII\n2\n.40" or "Wk08/26 II 2.9"
   text = text.replace(/Wk\d{2}\/\d{2}\s*\n?\s*II\s*\n?[\d\s.]*\n?/g, "");
 
+  // Remove continuation headers from merged notice blocks
+  text = text.replace(/\n\d{3,5}[^\n]*\(continued\)[^\n]*/gi, "\n");
+
   // Join Admiralty depth subscripts: "9\n8" (meaning 9.8m) → "9.8"
   text = text.replace(/(\d)\n(\d)(?=[^0-9]|$)/gm, "$1.$2");
 
