@@ -47,18 +47,24 @@ function formatExcerpt(raw) {
 }
 
 // Parse formatted excerpt into structured sections for display.
-// Everything before the first action keyword or chart ref is header metadata.
-// Everything from the first action keyword onward is the instruction body.
+// Header = subject + source (+ standalone prev update / datum when no Chart ref precedes them).
+// Body starts at the first Chart reference or action keyword, whichever comes first.
+// parseBodySections then handles all chart-level metadata uniformly.
 function parseExcerpt(raw) {
   const formatted = formatExcerpt(raw);
-  if (!formatted) return { subject: "", source: "", previousUpdate: "", datum: "", panel: "", body: "" };
+  if (!formatted) return { subject: "", source: "", previousUpdate: "", datum: "", body: "" };
 
   const lines = formatted.split("\n");
 
-  // Find where instruction body begins (first action keyword or first Chart ref after header)
+  // Find where body begins: first Chart reference or action keyword, whichever comes first
   let bodyStart = lines.length;
   for (let i = 0; i < lines.length; i++) {
-    if (/^(Insert|Delete|Move|Amend|Add|Remove|Substitute|Replace)\s/i.test(lines[i].trim())) {
+    const trimmed = lines[i].trim();
+    if (/^Chart\s+\d/i.test(trimmed)) {
+      bodyStart = i;
+      break;
+    }
+    if (/^(Insert|Delete|Move|Amend|Add|Remove|Substitute|Replace)\s/i.test(trimmed)) {
       bodyStart = i;
       break;
     }
@@ -67,42 +73,29 @@ function parseExcerpt(raw) {
   const headerLines = lines.slice(0, bodyStart);
   const bodyLines = lines.slice(bodyStart);
 
-  // Parse header metadata
+  // Parse header: subject, source, and standalone prev update / datum
+  // (only when they appear before any Chart ref — Chart refs trigger bodyStart above)
   let subject = "";
   let source = "";
   let previousUpdate = "";
   let datum = "";
-  let panel = "";
   const extraLines = [];
 
   for (const line of headerLines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
 
-    // First non-empty line: subject (strip NM number prefix)
     if (!subject) {
       subject = trimmed.replace(/^\d+\*?\s+/, "").trim();
       continue;
     }
 
-    // Source line
     if (/^Source:/i.test(trimmed)) {
       source = trimmed.replace(/^Source:\s*/i, "").trim();
       continue;
     }
 
-    // Chart reference line
-    if (/^Chart\s+\d/i.test(trimmed)) {
-      const panelMatch = trimmed.match(/\(([^)]+)\)/);
-      if (panelMatch) panel = panelMatch[1];
-      const prevMatch = trimmed.match(/\[\s*previous update\s+([^\]]+)\]/i);
-      if (prevMatch) previousUpdate = prevMatch[1].trim();
-      const datumMatch = trimmed.match(/(ETRS89|WGS84|ED50|OSGB36)\s*(DATUM)?/i);
-      if (datumMatch) datum = datumMatch[0].trim();
-      continue;
-    }
-
-    // Previous update on its own line
+    // Standalone previous update (before any Chart ref)
     if (/\[\s*previous update/i.test(trimmed)) {
       const prevMatch = trimmed.match(/\[\s*previous update\s+([^\]]+)\]/i);
       if (prevMatch) previousUpdate = prevMatch[1].trim();
@@ -111,7 +104,7 @@ function parseExcerpt(raw) {
       continue;
     }
 
-    // Standalone datum line
+    // Standalone datum
     if (/^(ETRS89|WGS84|ED50|OSGB36)/i.test(trimmed)) {
       datum = trimmed.trim();
       continue;
@@ -122,7 +115,7 @@ function parseExcerpt(raw) {
 
   const allBody = [...extraLines, ...bodyLines].join("\n").trim();
 
-  return { subject, source, previousUpdate, datum, panel, body: allBody };
+  return { subject, source, previousUpdate, datum, body: allBody };
 }
 
 // Split the instruction body into chart sub-sections when multiple panels appear.
@@ -187,7 +180,7 @@ function parseBodySections(bodyText) {
 }
 
 export default function CorrectionItem({ correction }) {
-  const { subject, source, previousUpdate, datum, panel, body } = parseExcerpt(correction.excerpt);
+  const { subject, source, previousUpdate, datum, body } = parseExcerpt(correction.excerpt);
   const bodySections = parseBodySections(body);
   const hasSubSections = bodySections.length > 1 || (bodySections.length === 1 && bodySections[0].chartRef);
 
@@ -213,18 +206,15 @@ export default function CorrectionItem({ correction }) {
       </div>
 
       {/* Subject & metadata */}
-      {(subject || source || previousUpdate || panel) && (
+      {(subject || source || previousUpdate) && (
         <div className="px-4 py-2 border-t border-red-100 space-y-0.5">
           {subject && (
             <p className="text-xs font-semibold text-gray-800">{subject}</p>
           )}
-          {(source || (previousUpdate && !hasSubSections) || panel) && (
+          {(source || (previousUpdate && !hasSubSections)) && (
             <div className="flex flex-wrap gap-x-4 text-[11px] text-gray-500">
               {source && (
                 <span><span className="font-medium text-gray-400">Source:</span> {source}</span>
-              )}
-              {panel && (
-                <span><span className="font-medium text-gray-400">Panel:</span> {panel}</span>
               )}
               {previousUpdate && !hasSubSections && (
                 <span><span className="font-medium text-gray-400">Prev update:</span> {previousUpdate}</span>
