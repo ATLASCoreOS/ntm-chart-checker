@@ -40,27 +40,37 @@ export async function GET() {
     lines.push(`PDF count: ${links.length}`);
     lines.push("");
 
-    if (!weeklyNtm) {
-      lines.push("ERROR: No weekly NtM PDF found");
-      return new Response(lines.join("\n"), {
-        headers: { "Content-Type": "text/plain" },
-      });
+    let corrections = {};
+    let tpNotices = {};
+    let tpInForce = {};
+    for (const chart of charts) {
+      corrections[chart] = [];
+      tpNotices[chart] = [];
+      tpInForce[chart] = [];
     }
 
-    const text = await downloadAndParsePDF(weeklyNtm.url);
-    lines.push(`PDF text length: ${text.length} chars`);
-    lines.push("");
+    // Parse Section II PDF (snii) for corrections + new T&P notices
+    if (sectionII) {
+      const sniiText = await downloadAndParsePDF(sectionII.url);
+      lines.push(`Section II PDF text length: ${sniiText.length} chars`);
+      corrections = findCorrections(sniiText, charts);
+      tpNotices = findTPNotices(sniiText, charts);
+    } else {
+      lines.push("WARNING: No Section II PDF found");
+    }
 
-    const corrections = findCorrections(text, charts);
-    const tpNotices = findTPNotices(text, charts);
-
-    let tpInForce = {};
-    for (const chart of charts) tpInForce[chart] = [];
-    try {
-      tpInForce = findTPInForce(text, charts);
-      lines.push("findTPInForce: OK");
-    } catch (e) {
-      lines.push(`findTPInForce: ERROR - ${e.message}`);
+    // Parse weekly NtM PDF (wknm) for T&P in force
+    if (weeklyNtm) {
+      const wknmText = await downloadAndParsePDF(weeklyNtm.url);
+      lines.push(`Weekly NtM PDF text length: ${wknmText.length} chars`);
+      try {
+        tpInForce = findTPInForce(wknmText, charts);
+        lines.push("findTPInForce: OK");
+      } catch (e) {
+        lines.push(`findTPInForce: ERROR - ${e.message}`);
+      }
+    } else {
+      lines.push("WARNING: No weekly NtM PDF found");
     }
 
     lines.push("");

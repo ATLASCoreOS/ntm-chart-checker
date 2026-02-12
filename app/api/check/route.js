@@ -53,38 +53,24 @@ export async function POST() {
       tpInForce[chart] = [];
     }
 
-    let parsedWeekly = false;
-
-    // 4. Parse weekly NtM PDF (contains Section I, IA, II, III, IV, V)
-    if (weeklyNtm) {
-      try {
-        const text = await downloadAndParsePDF(weeklyNtm.url);
-
-        // Section II: corrections + new T&P notices
-        corrections = findCorrections(text, charts);
-        tpNotices = findTPNotices(text, charts);
-        parsedWeekly = true;
-
-        // Section IA: T&P notices currently in force (separate try/catch
-        // so a failure here doesn't prevent corrections from being used)
-        try {
-          tpInForce = findTPInForce(text, charts);
-        } catch (tpErr) {
-          console.error("Error parsing T&P In Force:", tpErr.message);
-        }
-      } catch (err) {
-        console.error("Error parsing weekly NtM PDF:", err.message);
-      }
-    }
-
-    // 5. Only parse standalone Section II PDF if weekly NtM failed
-    if (!parsedWeekly && sectionII) {
+    // 4. Parse Section II PDF (snii) — chart corrections + new T&P notices
+    if (sectionII) {
       try {
         const text = await downloadAndParsePDF(sectionII.url);
         corrections = findCorrections(text, charts);
         tpNotices = findTPNotices(text, charts);
       } catch (err) {
         console.error("Error parsing Section II PDF:", err.message);
+      }
+    }
+
+    // 5. Parse weekly NtM PDF (wknm) — T&P notices in force from Section IA
+    if (weeklyNtm) {
+      try {
+        const text = await downloadAndParsePDF(weeklyNtm.url);
+        tpInForce = findTPInForce(text, charts);
+      } catch (err) {
+        console.error("Error parsing weekly NtM PDF:", err.message);
       }
     }
 
