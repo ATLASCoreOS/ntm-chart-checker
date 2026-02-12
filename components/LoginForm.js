@@ -32,11 +32,9 @@ export default function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-          Email
-        </label>
+        <label htmlFor="email" className="label">Email</label>
         <input
           id="email"
           type="email"
@@ -44,40 +42,49 @@ export default function LoginForm() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
           required
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+          autoComplete="email"
+          className="input-field"
         />
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-          Password
-        </label>
+        <label htmlFor="password" className="label">Password</label>
         <input
           id="password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+          autoComplete="current-password"
+          className="input-field"
         />
       </div>
 
       {error && (
-        <p className="text-red-600 text-sm" role="alert">{error}</p>
+        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2.5" role="alert">
+          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 8v4m0 4h.01" />
+          </svg>
+          {error}
+        </div>
       )}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="w-full py-2.5 bg-navy text-white text-sm font-medium rounded-md hover:bg-navy-800 disabled:opacity-50 transition-colors"
-      >
-        {submitting ? "Logging in..." : "Log In"}
+      <button type="submit" disabled={submitting} className="btn-primary w-full">
+        {submitting ? (
+          <>
+            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Logging in...
+          </>
+        ) : (
+          "Log in"
+        )}
       </button>
 
-      <p className="text-sm text-gray-500 text-center">
-        Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-navy hover:underline">
-          Register
+      <p className="text-sm text-slate-500 text-center">
+        No account?{" "}
+        <Link href="/register" className="text-navy-700 font-medium hover:text-navy-900 transition-colors">
+          Create one
         </Link>
       </p>
     </form>

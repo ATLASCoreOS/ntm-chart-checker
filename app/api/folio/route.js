@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { validateCharts, DEFAULT_CHARTS } from "@/lib/charts";
+import { MAX_CHARTS } from "@/lib/constants";
 
 export async function GET() {
   const session = await auth();
@@ -39,9 +40,9 @@ export async function PUT(request) {
     );
   }
 
-  if (validated.length > 50) {
+  if (validated.length > MAX_CHARTS) {
     return NextResponse.json(
-      { error: "Maximum 50 charts allowed" },
+      { error: `Maximum ${MAX_CHARTS} charts allowed` },
       { status: 400 }
     );
   }

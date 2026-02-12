@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/db";
 import { DEFAULT_CHARTS } from "@/lib/charts";
+import { BCRYPT_ROUNDS } from "@/lib/constants";
 
 export async function POST(request) {
   try {
@@ -31,7 +32,7 @@ export async function POST(request) {
     }
 
     // Hash password
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
     // Create user + default folio in transaction
     const user = await prisma.user.create({

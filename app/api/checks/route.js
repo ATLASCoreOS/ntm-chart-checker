@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
+import { HISTORY_PAGE_LIMIT, HISTORY_MAX_LIMIT } from "@/lib/constants";
 
 export async function GET(request) {
   const session = await auth();
@@ -10,7 +11,7 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url);
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10)));
+  const limit = Math.min(HISTORY_MAX_LIMIT, Math.max(1, parseInt(searchParams.get("limit") || String(HISTORY_PAGE_LIMIT), 10)));
 
   const [checks, total] = await Promise.all([
     prisma.check.findMany({

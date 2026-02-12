@@ -63,10 +63,10 @@ export default function RegisterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-          Name <span className="text-gray-400">(optional)</span>
+        <label htmlFor="name" className="label">
+          Name <span className="text-slate-400 normal-case tracking-normal">(optional)</span>
         </label>
         <input
           id="name"
@@ -74,14 +74,13 @@ export default function RegisterForm() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Your name"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+          autoComplete="name"
+          className="input-field"
         />
       </div>
 
       <div>
-        <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 mb-1">
-          Email
-        </label>
+        <label htmlFor="reg-email" className="label">Email</label>
         <input
           id="reg-email"
           type="email"
@@ -89,54 +88,62 @@ export default function RegisterForm() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
           required
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+          autoComplete="email"
+          className="input-field"
         />
       </div>
 
       <div>
-        <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 mb-1">
-          Password
-        </label>
+        <label htmlFor="reg-password" className="label">Password</label>
         <input
           id="reg-password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+          autoComplete="new-password"
+          className="input-field"
         />
-        <p className="text-xs text-gray-400 mt-1">Minimum 8 characters</p>
+        <p className="text-2xs text-slate-400 mt-1.5">Minimum 8 characters</p>
       </div>
 
       <div>
-        <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-1">
-          Confirm Password
-        </label>
+        <label htmlFor="confirm-password" className="label">Confirm Password</label>
         <input
           id="confirm-password"
           type="password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+          autoComplete="new-password"
+          className="input-field"
         />
       </div>
 
       {error && (
-        <p className="text-red-600 text-sm" role="alert">{error}</p>
+        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2.5" role="alert">
+          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 8v4m0 4h.01" />
+          </svg>
+          {error}
+        </div>
       )}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="w-full py-2.5 bg-navy text-white text-sm font-medium rounded-md hover:bg-navy-800 disabled:opacity-50 transition-colors"
-      >
-        {submitting ? "Creating account..." : "Create Account"}
+      <button type="submit" disabled={submitting} className="btn-primary w-full">
+        {submitting ? (
+          <>
+            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Creating account...
+          </>
+        ) : (
+          "Create account"
+        )}
       </button>
 
-      <p className="text-sm text-gray-500 text-center">
+      <p className="text-sm text-slate-500 text-center">
         Already have an account?{" "}
-        <Link href="/login" className="text-navy hover:underline">
+        <Link href="/login" className="text-navy-700 font-medium hover:text-navy-900 transition-colors">
           Log in
         </Link>
       </p>

@@ -1,3 +1,5 @@
+"use client";
+
 // Clean up raw PDF-extracted NtM correction text for readable display.
 function formatExcerpt(raw) {
   if (!raw) return "";
@@ -8,6 +10,9 @@ function formatExcerpt(raw) {
 
   // Remove continuation headers from merged notice blocks
   text = text.replace(/\n\d{3,5}[^\n]*\(continued\)[^\n]*/gi, "\n");
+
+  // Join sub-item references with the following line: "(a)\nabove" → "(a) above"
+  text = text.replace(/(\([a-z]\))\s*\n\s*/g, "$1 ");
 
   // Join Admiralty depth subscripts: "9\n8" (meaning 9.8m) → "9.8"
   text = text.replace(/(\d)\n(\d)(?=[^0-9]|$)/gm, "$1.$2");
@@ -26,20 +31,57 @@ function formatExcerpt(raw) {
   // Join coordinate lines (leading whitespace + degrees) to previous line
   text = text.replace(/\n\s+(\d{1,3}°)/g, " $1");
 
+  // Separate depth measurements concatenated with coordinates from PDF table extraction:
+  // "8·8m52° 29'·88N." → "8·8m   52° 29'·88N." and "8m52°" → "8m   52°"
+  text = text.replace(/(\d+[·.]?\d*m)(\d{1,3}°)/g, "$1   $2");
+
+  // Separate concatenated table column headers: "DepthPosition" → "Depth   Position"
+  // Require 3+ lowercase chars per part to avoid splitting names like "McGregor"
+  text = text.replace(/\b([A-Z][a-z]{3,})([A-Z][a-z]{3,})\b/g, "$1   $2");
+
+  // Remove stray page number fragments (lines that are just a decimal like ".99" or "2.99")
+  text = text.replace(/\n\s*\.?\d{1,2}\.\d{1,2}\s*$/g, "");
+  text = text.replace(/\n\s*\.\d{1,2}\s*$/g, "");
+
   // Collapse multiple spaces, split into lines
   text = text.replace(/[ \t]{2,}/g, " ");
   let lines = text.split("\n").map(l => l.trim()).filter(Boolean);
 
-  // Visual formatting: blank lines before instructions and chart refs, indent sub-items
+  // Visual formatting: structured indentation for instructions and sub-items
   const result = [];
+  let inInstruction = false;
+  let afterSubItem = false;
+
   for (const line of lines) {
-    if (/^(Insert|Delete|Move|Amend|Add|Remove|Substitute|Replace)\s/i.test(line) && result.length > 0) {
+    const isInstruction = /^(Insert|Delete|Move|Amend|Add|Remove|Substitute|Replace)\s/i.test(line);
+    const isChartRef = /^Chart\s+\d/.test(line);
+    const isSubItem = /^\([a-z]\)/.test(line);
+
+    // Blank line before instructions and chart refs
+    if ((isInstruction || isChartRef) && result.length > 0) {
       result.push("");
     }
-    if (/^Chart\s+\d/.test(line) && result.length > 0) {
-      result.push("");
-    }
-    if (/^\([a-z]\)/.test(line)) {
+
+    if (isInstruction) {
+      result.push(line);
+      inInstruction = true;
+      afterSubItem = false;
+    } else if (isChartRef) {
+      result.push(line);
+      inInstruction = false;
+      afterSubItem = false;
+    } else if (isSubItem) {
+      // Blank line between consecutive sub-items for visual separation
+      if (afterSubItem && result.length > 0) {
+        result.push("");
+      }
+      result.push("    " + line);
+      afterSubItem = true;
+    } else if (afterSubItem) {
+      // Detail line within a sub-item (e.g. "depth, 9.8")
+      result.push("        " + line);
+    } else if (inInstruction) {
+      // Direct content under an instruction (no sub-items)
       result.push("    " + line);
     } else {
       result.push(line);
@@ -182,97 +224,127 @@ function parseBodySections(bodyText) {
   return sections;
 }
 
-export default function CorrectionItem({ correction }) {
+import PDFBlockViewer from "./PDFBlockViewer";
+import CorrectionPDFView from "./CorrectionPDFView";
+import { useState, useCallback } from "react";
+
+export default function CorrectionItem({ correction, chartNumber, sectionIIUrl }) {
   const { subject, source, previousUpdate, datum, body } = parseExcerpt(correction.excerpt);
   const bodySections = parseBodySections(body);
   const hasSubSections = bodySections.length > 1 || (bodySections.length === 1 && bodySections[0].chartRef);
 
+  const hasPdfPage = sectionIIUrl && correction.pdfPage;
+  const [showText, setShowText] = useState(!hasPdfPage);
+  const handlePdfError = useCallback(() => setShowText(true), []);
+
   return (
-    <div className="border border-red-200 rounded-lg overflow-hidden">
+    <div className="border border-red-100 rounded-lg overflow-hidden bg-white">
       {/* NM number header */}
-      <div className="bg-red-50 px-4 py-2 flex items-center justify-between">
+      <div className="bg-red-50/60 px-4 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <span className="text-sm font-bold text-red-800">
+          <span className="text-sm font-semibold text-red-800 font-mono">
             NM {correction.nmNumber}
           </span>
-          {datum && !hasSubSections && (
-            <span className="text-[10px] font-medium text-gray-500 bg-white/70 px-1.5 py-0.5 rounded border border-red-100">
-              {datum}
+          {correction.isPdfBlock && (
+            <span className="px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-2xs font-medium shrink-0">
+              Block
             </span>
           )}
         </div>
-        {correction.isPdfBlock && (
-          <span className="px-1.5 py-0.5 bg-red-100 text-red-600 rounded text-[10px] font-medium shrink-0">
-            Block Correction
-          </span>
+        {hasPdfPage && (
+          <button
+            onClick={() => setShowText(!showText)}
+            className="btn-secondary text-2xs py-0.5 px-2"
+          >
+            {showText ? "NtM page" : "Text view"}
+          </button>
         )}
       </div>
 
-      {/* Subject & metadata */}
-      {(subject || source || previousUpdate) && (
-        <div className="px-4 py-2 border-t border-red-100 space-y-0.5">
-          {subject && (
-            <p className="text-xs font-semibold text-gray-800">{subject}</p>
-          )}
-          {(source || (previousUpdate && !hasSubSections)) && (
-            <div className="flex flex-wrap gap-x-4 text-[11px] text-gray-500">
-              {source && (
-                <span><span className="font-medium text-gray-400">Source:</span> {source}</span>
+      {/* PDF page view */}
+      {hasPdfPage && !showText && (
+        <CorrectionPDFView
+          sectionIIUrl={sectionIIUrl}
+          pageNumber={correction.pdfPage}
+          chartNumber={chartNumber}
+          nmNumber={correction.nmNumber}
+          onError={handlePdfError}
+        />
+      )}
+
+      {/* Text view */}
+      {showText && (
+        <>
+          {(subject || source || previousUpdate) && (
+            <div className="px-4 py-2.5 border-t border-red-50 space-y-0.5">
+              {subject && (
+                <p className="text-xs font-semibold text-slate-800">{subject}</p>
               )}
-              {previousUpdate && !hasSubSections && (
-                <span><span className="font-medium text-gray-400">Prev update:</span> {previousUpdate}</span>
+              {(source || (previousUpdate && !hasSubSections)) && (
+                <div className="flex flex-wrap gap-x-4 text-2xs text-slate-500">
+                  {source && (
+                    <span><span className="font-medium text-slate-400">Source</span> {source}</span>
+                  )}
+                  {previousUpdate && !hasSubSections && (
+                    <span><span className="font-medium text-slate-400">Prev update</span> {previousUpdate}</span>
+                  )}
+                </div>
               )}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Simple body (no chart sub-sections) */}
-      {body && !hasSubSections && (
-        <div className="px-4 py-3 border-t border-red-100 bg-white">
-          <pre className="text-xs text-gray-600 whitespace-pre-wrap break-words font-[inherit] leading-relaxed m-0">
-            {body}
-          </pre>
-        </div>
-      )}
-
-      {/* Chart sub-sections */}
-      {hasSubSections && bodySections.map((section, i) => (
-        <div key={i} className="border-t border-red-100">
-          {section.chartRef && (
-            <div className="px-4 py-1.5 bg-gray-50 flex flex-wrap items-baseline gap-x-3">
-              <span className="text-xs font-semibold text-gray-700">
-                Chart {section.chartRef}
-              </span>
-              {section.panel && (
-                <span className="text-[11px] text-gray-500">{section.panel}</span>
-              )}
-              {(section.previousUpdate || section.datum) && (
-                <span className="text-[10px] text-gray-400">
-                  {section.previousUpdate && `Prev: ${section.previousUpdate}`}
-                  {section.previousUpdate && section.datum && " · "}
-                  {section.datum}
-                </span>
-              )}
-            </div>
-          )}
-          {section.text && (
-            <div className="px-4 py-2.5 bg-white">
-              <pre className="text-xs text-gray-600 whitespace-pre-wrap break-words font-[inherit] leading-relaxed m-0">
-                {section.text}
+          {body && !hasSubSections && (
+            <div className="px-4 py-3 border-t border-red-50">
+              <pre className="text-xs text-slate-600 whitespace-pre-wrap break-words font-[inherit] leading-relaxed m-0">
+                {body}
               </pre>
             </div>
           )}
-        </div>
-      ))}
 
-      {/* Fallback for unparseable content */}
-      {!subject && !body && correction.excerpt && (
-        <div className="px-4 py-3 bg-white">
-          <pre className="text-xs text-gray-600 whitespace-pre-wrap break-words font-[inherit] leading-relaxed m-0">
-            {correction.excerpt}
-          </pre>
-        </div>
+          {hasSubSections && bodySections.map((section, i) => (
+            <div key={i} className="border-t border-red-50">
+              {section.chartRef && (
+                <div className="px-4 py-1.5 bg-slate-50 flex flex-wrap items-baseline gap-x-3">
+                  <span className="text-xs font-semibold text-slate-700 font-mono">
+                    Chart {section.chartRef}
+                  </span>
+                  {section.panel && (
+                    <span className="text-2xs text-slate-500">{section.panel}</span>
+                  )}
+                  {(section.previousUpdate || section.datum) && (
+                    <span className="text-2xs text-slate-400">
+                      {section.previousUpdate && `Prev: ${section.previousUpdate}`}
+                      {section.previousUpdate && section.datum && " · "}
+                      {section.datum}
+                    </span>
+                  )}
+                </div>
+              )}
+              {section.text && (
+                <div className="px-4 py-2.5">
+                  <pre className="text-xs text-slate-600 whitespace-pre-wrap break-words font-[inherit] leading-relaxed m-0">
+                    {section.text}
+                  </pre>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {!subject && !body && correction.excerpt && (
+            <div className="px-4 py-3">
+              <pre className="text-xs text-slate-600 whitespace-pre-wrap break-words font-[inherit] leading-relaxed m-0">
+                {correction.excerpt}
+              </pre>
+            </div>
+          )}
+        </>
+      )}
+
+      {correction.blockUrl && (
+        <PDFBlockViewer
+          blockUrl={correction.blockUrl}
+          blockFilename={correction.blockFilename}
+        />
       )}
     </div>
   );

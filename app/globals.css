@@ -2,9 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #f8f9fb;
-  color: #111827;
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-navy-600/30 ring-offset-1;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-xl shadow-card;
+  }
+
+  .card-interactive {
+    @apply card transition-shadow duration-150 hover:shadow-card-hover;
+  }
+
+  .input-field {
+    @apply w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900
+           placeholder:text-slate-400
+           focus:outline-none focus:ring-2 focus:ring-navy-600/20 focus:border-navy-600
+           transition-colors duration-150;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5
+           bg-navy-900 text-white text-sm font-medium rounded-lg
+           hover:bg-navy-800 active:bg-navy-950
+           disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed
+           transition-colors duration-150;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2
+           bg-white text-slate-700 text-sm font-medium rounded-lg
+           border border-slate-200
+           hover:bg-slate-50 hover:border-slate-300 active:bg-slate-100
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-colors duration-150;
+  }
+
+  .label {
+    @apply block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5;
+  }
 }
 
 @keyframes progress {
@@ -13,7 +57,7 @@ body {
 }
 
 .animate-progress {
-  animation: progress 2.5s ease-in-out infinite;
+  animation: progress 2s ease-in-out infinite;
 }
 
 @keyframes spin {
@@ -21,5 +65,5 @@ body {
 }
 
 .animate-spin {
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
 }

@@ -9,6 +9,8 @@ import ChartResult from "@/components/ChartResult";
 import SourceCard from "@/components/SourceCard";
 import Footer from "@/components/Footer";
 
+const COOLDOWN_SECONDS = 30;
+
 export default function Dashboard() {
   const [charts, setCharts] = useState([]);
   const [chartsLoading, setChartsLoading] = useState(true);
@@ -17,6 +19,9 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [cooldown, setCooldown] = useState(false);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [availableWeeks, setAvailableWeeks] = useState([]);
+  const [weeksLoading, setWeeksLoading] = useState(true);
+  const [selectedWeek, setSelectedWeek] = useState(null);
 
   useEffect(() => {
     async function loadFolio() {
@@ -30,7 +35,19 @@ export default function Dashboard() {
         setChartsLoading(false);
       }
     }
+    async function loadWeeks() {
+      try {
+        const res = await fetch("/api/weeks");
+        const data = await res.json();
+        setAvailableWeeks(data.weeks || []);
+      } catch {
+        // Silently fail — user can still check current week
+      } finally {
+        setWeeksLoading(false);
+      }
+    }
     loadFolio();
+    loadWeeks();
   }, []);
 
   const saveFolio = useCallback(
@@ -55,7 +72,15 @@ export default function Dashboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/check", { method: "POST" });
+      const fetchOptions = { method: "POST" };
+      if (selectedWeek) {
+        fetchOptions.headers = { "Content-Type": "application/json" };
+        fetchOptions.body = JSON.stringify({
+          year: selectedWeek.year,
+          week: selectedWeek.week,
+        });
+      }
+      const res = await fetch("/api/check", fetchOptions);
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || data.error || "Check failed");
       setResult(data);
@@ -69,7 +94,7 @@ export default function Dashboard() {
 
   function startCooldown() {
     setCooldown(true);
-    setCooldownSeconds(30);
+    setCooldownSeconds(COOLDOWN_SECONDS);
     const interval = setInterval(() => {
       setCooldownSeconds((prev) => {
         if (prev <= 1) {
@@ -86,57 +111,70 @@ export default function Dashboard() {
     <>
       <NavBar activePage="dashboard" />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-8 space-y-5">
-        <ChartManager
-          charts={charts}
-          chartsLoading={chartsLoading}
-          onChartsChange={saveFolio}
-        />
+      <main className="flex-1">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-4">
+          <ChartManager
+            charts={charts}
+            chartsLoading={chartsLoading}
+            onChartsChange={saveFolio}
+          />
 
-        <RunButton
-          onRun={runCheck}
-          loading={loading}
-          disabled={charts.length === 0}
-          cooldown={cooldown}
-          cooldownSeconds={cooldownSeconds}
-        />
+          <RunButton
+            onRun={runCheck}
+            loading={loading}
+            disabled={charts.length === 0}
+            cooldown={cooldown}
+            cooldownSeconds={cooldownSeconds}
+            availableWeeks={availableWeeks}
+            selectedWeek={selectedWeek}
+            onWeekChange={setSelectedWeek}
+            weeksLoading={weeksLoading}
+          />
 
-        {error && (
-          <div
-            className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-sm"
-            role="alert"
-          >
-            Error: {error}
-          </div>
-        )}
-
-        {result && (
-          <>
-            <ResultsSummary result={result} />
-
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
-              <h2 className="text-base font-semibold text-gray-900 mb-3">
-                Chart-by-Chart
-              </h2>
-              <div className="space-y-2">
-                {result.charts.map((chart) => (
-                  <ChartResult
-                    key={chart}
-                    chart={chart}
-                    corrections={result.corrections[chart] || []}
-                    tpNotices={result.tpNotices[chart] || []}
-                    tpInForce={result.tpInForce?.[chart] || []}
-                  />
-                ))}
-              </div>
+          {error && (
+            <div
+              className="flex items-center gap-2.5 bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm animate-fade-in"
+              role="alert"
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 8v4m0 4h.01" />
+              </svg>
+              {error}
             </div>
+          )}
 
-            <SourceCard sourceUrl={result.sourceUrl} />
-          </>
-        )}
+          {result && (
+            <div className="space-y-4 animate-fade-in">
+              <ResultsSummary result={result} />
 
-        <Footer />
-      </div>
+              <div className="card overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-100">
+                  <h2 className="text-sm font-semibold text-slate-900">
+                    Chart-by-Chart Results
+                  </h2>
+                </div>
+                <div className="divide-y divide-slate-100">
+                  {result.charts.map((chart) => (
+                    <ChartResult
+                      key={chart}
+                      chart={chart}
+                      corrections={result.corrections[chart] || []}
+                      tpNotices={result.tpNotices[chart] || []}
+                      tpInForce={result.tpInForce?.[chart] || []}
+                      sectionIIUrl={result.sectionIIUrl}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <SourceCard sourceUrl={result.sourceUrl} />
+            </div>
+          )}
+        </div>
+      </main>
+
+      <Footer />
     </>
   );
 }

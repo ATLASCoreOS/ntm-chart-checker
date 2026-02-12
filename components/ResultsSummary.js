@@ -14,51 +14,65 @@ export default function ResultsSummary({ result }) {
   });
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+    <div className="card p-5">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h2 className="text-base font-semibold text-gray-900">
+          <h2 className="text-sm font-semibold text-slate-900">
             Weekly NtM Report
           </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-2xs text-slate-400 mt-1">
             Week {String(weekInfo.week).padStart(2, "0")}/{weekInfo.year}
-            <span className="mx-2 text-gray-300">|</span>
+            <span className="mx-1.5 text-slate-200">|</span>
             {weeklyNtmFile || "unknown"}
           </p>
         </div>
         <DownloadPDFButton result={result} />
       </div>
 
-      <p className="text-xs text-gray-400 mb-4">
-        Checked: {date} &bull; {pdfCount} PDFs parsed &bull; {(durationMs / 1000).toFixed(1)}s
+      <p className="text-2xs text-slate-400 mb-4 tabular-nums">
+        {date} &middot; {pdfCount} PDFs parsed &middot; {(durationMs / 1000).toFixed(1)}s
       </p>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
         <StatBox
           value={totalCorrections}
           label="Corrections"
-          color={totalCorrections === 0 ? "green" : "red"}
+          status={totalCorrections === 0 ? "clear" : "alert"}
         />
         <StatBox
           value={totalTP}
           label="New T&P"
-          color={totalTP === 0 ? "green" : "orange"}
+          status={totalTP === 0 ? "clear" : "warning"}
         />
         <StatBox
           value={totalTPInForce || 0}
           label="T&P In Force"
-          color={(totalTPInForce || 0) === 0 ? "green" : "blue"}
+          status={(totalTPInForce || 0) === 0 ? "clear" : "info"}
         />
-        <StatBox value={charts.length} label="Charts" color="neutral" />
+        <StatBox value={charts.length} label="Charts" status="neutral" />
       </div>
 
+      {result.failures && result.failures.length > 0 && (
+        <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 mb-3">
+          <p className="text-xs font-medium text-amber-800 mb-1">Some data could not be checked:</p>
+          <ul className="space-y-0.5">
+            {result.failures.map((f, i) => (
+              <li key={i} className="text-2xs text-amber-700 flex items-start gap-1.5">
+                <span className="text-amber-400 mt-px">&#8226;</span>
+                {f}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {matchingBlocks && matchingBlocks.length > 0 ? (
-        <p className="text-xs text-red-600 font-medium">
+        <p className="text-2xs text-red-600 font-medium">
           Chart block PDFs match your folio: {matchingBlocks.join(", ")}
         </p>
       ) : allBlockChartNums && allBlockChartNums.length > 0 ? (
-        <p className="text-xs text-gray-400">
-          No chart block correction PDFs match your folio. Blocks issued for:{" "}
+        <p className="text-2xs text-slate-400">
+          No chart block corrections match your folio. Blocks issued for:{" "}
           {allBlockChartNums.join(", ")}.
         </p>
       ) : null}
@@ -66,19 +80,19 @@ export default function ResultsSummary({ result }) {
   );
 }
 
-function StatBox({ value, label, color }) {
+function StatBox({ value, label, status }) {
   const styles = {
-    green: "bg-green-50 border-green-200 text-green-700",
-    red: "bg-red-50 border-red-200 text-red-700",
-    orange: "bg-orange-50 border-orange-200 text-orange-700",
-    blue: "bg-blue-50 border-blue-200 text-blue-700",
-    neutral: "bg-gray-50 border-gray-200 text-gray-700",
-  }[color];
+    clear: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    alert: "border-red-200 bg-red-50 text-red-700",
+    warning: "border-amber-200 bg-amber-50 text-amber-700",
+    info: "border-sky-200 bg-sky-50 text-sky-700",
+    neutral: "border-slate-200 bg-slate-50 text-slate-700",
+  }[status];
 
   return (
     <div className={`rounded-lg p-3 text-center border ${styles}`}>
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="text-[11px] uppercase font-medium tracking-wider text-gray-500 mt-0.5">
+      <div className="text-xl font-bold tabular-nums">{value}</div>
+      <div className="text-2xs uppercase font-medium tracking-wider text-slate-500 mt-0.5">
         {label}
       </div>
     </div>

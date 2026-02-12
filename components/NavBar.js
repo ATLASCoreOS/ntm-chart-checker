@@ -7,48 +7,57 @@ export default function NavBar({ activePage }) {
   const { data: session } = useSession();
 
   return (
-    <nav className="bg-white border-b border-gray-200 mb-6">
+    <nav className="bg-navy-950 sticky top-0 z-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-14">
-          <Link href="/" className="text-lg font-semibold text-navy">
-            NtM Checker
+          <Link href="/" className="flex items-center gap-2.5">
+            <span className="text-[15px] font-semibold text-white tracking-tight">
+              NtM Checker
+            </span>
+            <span className="hidden sm:inline text-2xs text-navy-400 font-medium border border-navy-700 rounded px-1.5 py-0.5">
+              UKHO
+            </span>
           </Link>
 
           {session?.user && (
-            <div className="flex items-center gap-5 text-sm">
-              <Link
-                href="/"
-                className={`transition-colors ${
-                  activePage === "dashboard"
-                    ? "text-navy font-medium"
-                    : "text-gray-500 hover:text-gray-900"
-                }`}
-              >
+            <div className="flex items-center gap-1">
+              <NavLink href="/" active={activePage === "dashboard"}>
                 Dashboard
-              </Link>
-              <Link
-                href="/history"
-                className={`transition-colors ${
-                  activePage === "history"
-                    ? "text-navy font-medium"
-                    : "text-gray-500 hover:text-gray-900"
-                }`}
-              >
+              </NavLink>
+              <NavLink href="/history" active={activePage === "history"}>
                 History
-              </Link>
-              <span className="text-gray-400 text-xs hidden sm:inline">
-                {session.user.email}
-              </span>
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="text-gray-400 hover:text-red-600 text-xs transition-colors"
-              >
-                Log out
-              </button>
+              </NavLink>
+
+              <div className="ml-3 pl-3 border-l border-navy-700 flex items-center gap-3">
+                <span className="text-2xs text-navy-400 hidden sm:inline truncate max-w-[160px]">
+                  {session.user.email}
+                </span>
+                <button
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  className="text-2xs text-navy-400 hover:text-white transition-colors duration-150"
+                >
+                  Log out
+                </button>
+              </div>
             </div>
           )}
         </div>
       </div>
     </nav>
+  );
+}
+
+function NavLink({ href, active, children }) {
+  return (
+    <Link
+      href={href}
+      className={`px-3 py-1.5 text-sm rounded-md transition-colors duration-150 ${
+        active
+          ? "text-white bg-white/10 font-medium"
+          : "text-navy-300 hover:text-white hover:bg-white/5"
+      }`}
+    >
+      {children}
+    </Link>
   );
 }
