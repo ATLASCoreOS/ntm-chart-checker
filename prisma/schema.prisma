@@ -9,37 +9,45 @@ datasource db {
 }
 
 model User {
-  id           String      @id @default(uuid())
-  email        String      @unique
-  passwordHash String      @map("password_hash")
-  name         String?
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
-  folio        ChartFolio?
-  checks       Check[]
+  id            String       @id @default(uuid())
+  email         String       @unique
+  passwordHash  String       @map("password_hash")
+  name          String?
+  activeFolioId String?      @map("active_folio_id")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  folios        ChartFolio[]
+  checks        Check[]
 
   @@map("users")
 }
 
 model ChartFolio {
-  id        String   @id @default(uuid())
-  userId    String   @unique @map("user_id")
-  charts    Int[]    @default([])
-  updatedAt DateTime @updatedAt @map("updated_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  vesselName String   @default("My Vessel") @map("vessel_name")
+  charts     Int[]    @default([])
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checks     Check[]
 
+  @@index([userId], map: "idx_folios_user")
   @@map("chart_folios")
 }
 
 model Check {
-  id         String   @id @default(uuid())
-  userId     String   @map("user_id")
-  weekYear   Int      @map("week_year")
-  weekNumber Int      @map("week_number")
+  id         String      @id @default(uuid())
+  userId     String      @map("user_id")
+  folioId    String?     @map("folio_id")
+  vesselName String?     @map("vessel_name")
+  weekYear   Int         @map("week_year")
+  weekNumber Int         @map("week_number")
   charts     Int[]
   results    Json
-  checkedAt  DateTime @default(now()) @map("checked_at")
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkedAt  DateTime    @default(now()) @map("checked_at")
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folio      ChartFolio? @relation(fields: [folioId], references: [id], onDelete: SetNull)
 
   @@index([userId, checkedAt(sort: Desc)], map: "idx_checks_user_date")
   @@index([userId, weekYear, weekNumber], map: "idx_checks_user_week")

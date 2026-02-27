@@ -35,10 +35,24 @@ export async function POST(request) {
       // No body or invalid JSON — check current week
     }
 
-    // 2. Read chart folio from DB
-    const folio = await prisma.chartFolio.findUnique({
-      where: { userId: session.user.id },
+    // 2. Read ACTIVE chart folio from DB
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { activeFolioId: true },
     });
+
+    let folio = null;
+    if (currentUser?.activeFolioId) {
+      folio = await prisma.chartFolio.findFirst({
+        where: { id: currentUser.activeFolioId, userId: session.user.id },
+      });
+    }
+    if (!folio) {
+      folio = await prisma.chartFolio.findFirst({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "asc" },
+      });
+    }
     const charts = validateCharts(folio?.charts || DEFAULT_CHARTS);
 
     if (charts.length === 0) {
@@ -117,9 +131,12 @@ export async function POST(request) {
     }
 
     // 6. Parse weekly NtM PDF (wknm) — T&P notices in force from Section IA
+    let tpInForceAvailable = true;
     if (wknmResult?.ok) {
       t0 = Date.now();
       tpInForce = findTPInForce(wknmResult.text, charts);
+      tpInForceAvailable = tpInForce._listAvailable !== false;
+      delete tpInForce._listAvailable;
       perf("parseWKNM", Date.now() - t0);
     } else if (wknmResult && !wknmResult.ok) {
       log("error", "Weekly NtM PDF download/parse failed", wknmResult.error);
@@ -170,12 +187,14 @@ export async function POST(request) {
     const result = {
       weekInfo,
       charts,
+      vesselName: folio?.vesselName || null,
       corrections,
       tpNotices,
       tpInForce,
       totalCorrections,
       totalTP,
       totalTPInForce,
+      tpInForceAvailable,
       failures: failures.length > 0 ? failures : undefined,
       allBlockChartNums: allChartBlocks.map((b) => b.chartNum),
       matchingBlocks: chartBlocks.map((b) => b.filename),
@@ -192,6 +211,8 @@ export async function POST(request) {
     await prisma.check.create({
       data: {
         userId: session.user.id,
+        folioId: folio?.id || null,
+        vesselName: folio?.vesselName || null,
         weekYear: weekInfo.year,
         weekNumber: weekInfo.week,
         charts,

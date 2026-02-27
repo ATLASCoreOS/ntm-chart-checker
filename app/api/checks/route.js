@@ -31,6 +31,7 @@ export async function GET(request) {
     weekYear: check.weekYear,
     weekNumber: check.weekNumber,
     charts: check.charts,
+    vesselName: check.vesselName || null,
     totalCorrections: check.results?.totalCorrections ?? 0,
     totalTP: check.results?.totalTP ?? 0,
     checkedAt: check.checkedAt,

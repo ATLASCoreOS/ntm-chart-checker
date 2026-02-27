@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import NavBar from "@/components/NavBar";
+import VesselSelector from "@/components/VesselSelector";
 import ChartManager from "@/components/ChartManager";
 import RunButton from "@/components/RunButton";
 import ResultsSummary from "@/components/ResultsSummary";
@@ -12,8 +13,9 @@ import Footer from "@/components/Footer";
 const COOLDOWN_SECONDS = 30;
 
 export default function Dashboard() {
-  const [charts, setCharts] = useState([]);
-  const [chartsLoading, setChartsLoading] = useState(true);
+  const [folios, setFolios] = useState([]);
+  const [activeFolioId, setActiveFolioId] = useState(null);
+  const [foliosLoading, setFoliosLoading] = useState(true);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -23,16 +25,20 @@ export default function Dashboard() {
   const [weeksLoading, setWeeksLoading] = useState(true);
   const [selectedWeek, setSelectedWeek] = useState(null);
 
+  const activeFolio = folios.find((f) => f.id === activeFolioId);
+  const charts = activeFolio?.charts || [];
+
   useEffect(() => {
-    async function loadFolio() {
+    async function loadFolios() {
       try {
         const res = await fetch("/api/folio");
         const data = await res.json();
-        setCharts(data.charts || []);
+        setFolios(data.folios || []);
+        setActiveFolioId(data.activeFolioId || null);
       } catch {
-        setError("Failed to load chart folio");
+        setError("Failed to load vessel folios");
       } finally {
-        setChartsLoading(false);
+        setFoliosLoading(false);
       }
     }
     async function loadWeeks() {
@@ -46,26 +52,108 @@ export default function Dashboard() {
         setWeeksLoading(false);
       }
     }
-    loadFolio();
+    loadFolios();
     loadWeeks();
   }, []);
 
+  const switchFolio = useCallback(
+    async (folioId) => {
+      setActiveFolioId(folioId);
+      setResult(null);
+      try {
+        await fetch("/api/folio/active", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folioId }),
+        });
+      } catch {
+        setError("Failed to switch vessel");
+      }
+    },
+    []
+  );
+
   const saveFolio = useCallback(
     async (newCharts) => {
-      const prev = charts;
-      setCharts(newCharts);
+      if (!activeFolioId) return;
+      const prev = folios;
+      setFolios((f) =>
+        f.map((fo) =>
+          fo.id === activeFolioId ? { ...fo, charts: newCharts } : fo
+        )
+      );
       try {
         await fetch("/api/folio", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ charts: newCharts }),
+          body: JSON.stringify({ folioId: activeFolioId, charts: newCharts }),
         });
       } catch {
-        setCharts(prev);
+        setFolios(prev);
         setError("Failed to save charts");
       }
     },
-    [charts]
+    [activeFolioId, folios]
+  );
+
+  const addFolio = useCallback(
+    async (vesselName) => {
+      try {
+        const res = await fetch("/api/folio", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ vesselName, charts: [] }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        setFolios((prev) => [...prev, data]);
+        setActiveFolioId(data.id);
+        setResult(null);
+      } catch (err) {
+        setError(err.message || "Failed to add vessel");
+      }
+    },
+    []
+  );
+
+  const renameFolio = useCallback(
+    async (folioId, vesselName) => {
+      setFolios((prev) =>
+        prev.map((f) => (f.id === folioId ? { ...f, vesselName } : f))
+      );
+      try {
+        await fetch("/api/folio", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folioId, vesselName }),
+        });
+      } catch {
+        setError("Failed to rename vessel");
+      }
+    },
+    []
+  );
+
+  const deleteFolio = useCallback(
+    async (folioId) => {
+      try {
+        const res = await fetch("/api/folio", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folioId }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        setFolios((prev) => prev.filter((f) => f.id !== folioId));
+        if (activeFolioId === folioId) {
+          setActiveFolioId(data.activeFolioId);
+          setResult(null);
+        }
+      } catch (err) {
+        setError(err.message || "Failed to delete vessel");
+      }
+    },
+    [activeFolioId]
   );
 
   async function runCheck() {
@@ -113,9 +201,19 @@ export default function Dashboard() {
 
       <main className="flex-1">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-4">
+          <VesselSelector
+            folios={folios}
+            activeFolioId={activeFolioId}
+            loading={foliosLoading}
+            onSwitch={switchFolio}
+            onAdd={addFolio}
+            onRename={renameFolio}
+            onDelete={deleteFolio}
+          />
+
           <ChartManager
             charts={charts}
-            chartsLoading={chartsLoading}
+            chartsLoading={foliosLoading}
             onChartsChange={saveFolio}
           />
 

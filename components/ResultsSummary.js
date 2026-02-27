@@ -3,7 +3,7 @@
 import DownloadPDFButton from "./DownloadPDFButton";
 
 export default function ResultsSummary({ result }) {
-  const { weekInfo, totalCorrections, totalTP, totalTPInForce, charts, pdfCount, durationMs, checkedAt, weeklyNtmFile, allBlockChartNums, matchingBlocks } = result;
+  const { weekInfo, totalCorrections, totalTP, totalTPInForce, tpInForceAvailable, charts, pdfCount, durationMs, checkedAt, weeklyNtmFile, allBlockChartNums, matchingBlocks } = result;
 
   const date = new Date(checkedAt).toLocaleString("en-GB", {
     day: "2-digit",
@@ -21,6 +21,9 @@ export default function ResultsSummary({ result }) {
             Weekly NtM Report
           </h2>
           <p className="text-2xs text-slate-400 mt-1">
+            {result.vesselName && (
+              <span className="text-navy-600 font-medium">{result.vesselName}<span className="mx-1.5 text-slate-200">|</span></span>
+            )}
             Week {String(weekInfo.week).padStart(2, "0")}/{weekInfo.year}
             <span className="mx-1.5 text-slate-200">|</span>
             {weeklyNtmFile || "unknown"}
@@ -45,9 +48,9 @@ export default function ResultsSummary({ result }) {
           status={totalTP === 0 ? "clear" : "warning"}
         />
         <StatBox
-          value={totalTPInForce || 0}
+          value={tpInForceAvailable === false ? "—" : (totalTPInForce || 0)}
           label="T&P In Force"
-          status={(totalTPInForce || 0) === 0 ? "clear" : "info"}
+          status={tpInForceAvailable === false ? "neutral" : (totalTPInForce || 0) === 0 ? "clear" : "info"}
         />
         <StatBox value={charts.length} label="Charts" status="neutral" />
       </div>
@@ -63,6 +66,17 @@ export default function ResultsSummary({ result }) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {tpInForceAvailable === false && (
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-3">
+          <p className="text-2xs text-slate-600">
+            <span className="font-medium text-slate-500">T&P In Force data not available this week.</span>{" "}
+            The UKHO publishes the full T&P In Force list monthly. Check your{" "}
+            <a href="/history" className="text-navy-600 underline">history</a>{" "}
+            for the most recent T&P In Force results.
+          </p>
         </div>
       )}
 

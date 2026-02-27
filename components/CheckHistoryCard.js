@@ -24,7 +24,12 @@ export default function CheckHistoryCard({ check, expanded, expandedResult, onEx
         <div className="flex items-center gap-3 min-w-0">
           <span className={`w-2 h-2 rounded-full shrink-0 ${hasFindings ? "bg-red-400" : "bg-emerald-400"}`} />
           <div className="min-w-0">
-            <p className="text-sm font-medium text-slate-900">{date}</p>
+            <p className="text-sm font-medium text-slate-900">
+              {check.vesselName && (
+                <span className="text-navy-700">{check.vesselName}<span className="mx-1.5 text-slate-200">|</span></span>
+              )}
+              {date}
+            </p>
             <p className="text-2xs text-slate-400 mt-0.5 tabular-nums">
               {check.charts.length} charts &middot; {check.totalCorrections} correction{check.totalCorrections !== 1 ? "s" : ""} &middot; {check.totalTP} T&P
             </p>

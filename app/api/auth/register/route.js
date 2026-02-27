@@ -40,13 +40,23 @@ export async function POST(request) {
         email,
         passwordHash,
         name: name ? name.slice(0, 100).trim() : null,
-        folio: {
+        folios: {
           create: {
+            vesselName: "My Vessel",
             charts: DEFAULT_CHARTS,
           },
         },
       },
+      include: { folios: true },
     });
+
+    // Set the new folio as active
+    if (user.folios[0]) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { activeFolioId: user.folios[0].id },
+      });
+    }
 
     return NextResponse.json({ message: "Account created" }, { status: 201 });
   } catch (error) {
