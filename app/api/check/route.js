@@ -9,6 +9,8 @@ import {
   findCorrections,
   findTPNotices,
   findTPInForce,
+  extractSectionIA,
+  hasTpInForceList,
   findPageForCorrection,
 } from "@/lib/parser";
 import { log, perf } from "@/lib/logger";
@@ -131,19 +133,72 @@ export async function POST(request) {
     }
 
     // 6. Parse weekly NtM PDF (wknm) — T&P notices in force from Section IA
-    let tpInForceAvailable = true;
+    //    Cache the Section IA text when available; load from cache when not.
+    let tpInForceWeek = null;
     if (wknmResult?.ok) {
       t0 = Date.now();
-      tpInForce = findTPInForce(wknmResult.text, charts);
-      tpInForceAvailable = tpInForce._listAvailable !== false;
-      delete tpInForce._listAvailable;
+      const sectionIAText = extractSectionIA(wknmResult.text);
+
+      if (hasTpInForceList(sectionIAText)) {
+        // This week's PDF contains the monthly T&P In Force list
+        tpInForce = findTPInForce(sectionIAText, charts);
+        tpInForceWeek = { year: weekInfo.year, week: weekInfo.week };
+
+        // Cache the Section IA text for weeks that don't have it
+        await prisma.tpCache.upsert({
+          where: { id: "singleton" },
+          update: {
+            weekYear: weekInfo.year,
+            weekNumber: weekInfo.week,
+            sectionText: sectionIAText,
+          },
+          create: {
+            id: "singleton",
+            weekYear: weekInfo.year,
+            weekNumber: weekInfo.week,
+            sectionText: sectionIAText,
+          },
+        });
+        log("info", `Cached T&P In Force from Wk ${weekInfo.week}/${weekInfo.year}`);
+      } else {
+        // No T&P list this week — load from cache
+        const cached = await prisma.tpCache.findUnique({
+          where: { id: "singleton" },
+        });
+        if (cached) {
+          tpInForce = findTPInForce(cached.sectionText, charts);
+          tpInForceWeek = { year: cached.weekYear, week: cached.weekNumber };
+          log("info", `Using cached T&P In Force from Wk ${cached.weekNumber}/${cached.weekYear}`);
+        } else {
+          log("warn", "No T&P In Force cache available yet");
+        }
+      }
       perf("parseWKNM", Date.now() - t0);
     } else if (wknmResult && !wknmResult.ok) {
       log("error", "Weekly NtM PDF download/parse failed", wknmResult.error);
-      failures.push("Weekly NtM (T&P in force) PDF failed to load");
+      // Still try the cache
+      const cached = await prisma.tpCache.findUnique({
+        where: { id: "singleton" },
+      });
+      if (cached) {
+        tpInForce = findTPInForce(cached.sectionText, charts);
+        tpInForceWeek = { year: cached.weekYear, week: cached.weekNumber };
+        log("info", `Using cached T&P In Force (PDF failed) from Wk ${cached.weekNumber}/${cached.weekYear}`);
+      } else {
+        failures.push("Weekly NtM (T&P in force) PDF failed to load");
+      }
     } else if (!weeklyNtm) {
       log("warn", "Weekly NtM PDF not found on UKHO page");
-      failures.push("Weekly NtM PDF not found on UKHO page");
+      const cached = await prisma.tpCache.findUnique({
+        where: { id: "singleton" },
+      });
+      if (cached) {
+        tpInForce = findTPInForce(cached.sectionText, charts);
+        tpInForceWeek = { year: cached.weekYear, week: cached.weekNumber };
+        log("info", `Using cached T&P In Force (no PDF) from Wk ${cached.weekNumber}/${cached.weekYear}`);
+      } else {
+        failures.push("Weekly NtM PDF not found on UKHO page");
+      }
     }
 
     // 7. Chart block PDFs — attach URL to matching text correction, or add new entry
@@ -194,7 +249,7 @@ export async function POST(request) {
       totalCorrections,
       totalTP,
       totalTPInForce,
-      tpInForceAvailable,
+      tpInForceWeek,
       failures: failures.length > 0 ? failures : undefined,
       allBlockChartNums: allChartBlocks.map((b) => b.chartNum),
       matchingBlocks: chartBlocks.map((b) => b.filename),

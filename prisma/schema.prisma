@@ -53,3 +53,13 @@ model Check {
   @@index([userId, weekYear, weekNumber], map: "idx_checks_user_week")
   @@map("checks")
 }
+
+model TpCache {
+  id          String   @id @default("singleton")
+  weekYear    Int      @map("week_year")
+  weekNumber  Int      @map("week_number")
+  sectionText String   @map("section_text")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("tp_in_force_cache")
+}

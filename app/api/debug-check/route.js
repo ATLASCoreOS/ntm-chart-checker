@@ -8,6 +8,7 @@ import {
   findCorrections,
   findTPNotices,
   findTPInForce,
+  extractSectionIA,
 } from "@/lib/parser";
 
 export const maxDuration = 60;
@@ -64,7 +65,7 @@ export async function GET() {
       const wknmText = await downloadAndParsePDF(weeklyNtm.url);
       lines.push(`Weekly NtM PDF text length: ${wknmText.length} chars`);
       try {
-        tpInForce = findTPInForce(wknmText, charts);
+        tpInForce = findTPInForce(extractSectionIA(wknmText), charts);
         lines.push("findTPInForce: OK");
       } catch (e) {
         lines.push(`findTPInForce: ERROR - ${e.message}`);
