@@ -25,6 +25,9 @@ export default function NavBar({ activePage }) {
               <NavLink href="/" active={activePage === "dashboard"}>
                 Dashboard
               </NavLink>
+              <NavLink href="/corrections" active={activePage === "corrections"}>
+                Corrections
+              </NavLink>
               <NavLink href="/history" active={activePage === "history"}>
                 History
               </NavLink>

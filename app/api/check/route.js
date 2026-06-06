@@ -4,17 +4,14 @@ import prisma from "@/lib/db";
 import { validateCharts, DEFAULT_CHARTS } from "@/lib/charts";
 import { getChartName } from "@/lib/chartNames";
 import { COOLDOWN_SECONDS } from "@/lib/constants";
-import { fetchWeeklyPage, parsePageLinks, identifyPDFs } from "@/lib/scraper";
+import { identifyPDFs } from "@/lib/scraper";
 import {
-  downloadAndParsePDF,
-  downloadAndParsePDFWithPages,
   findCorrections,
   findTPNotices,
   findTPInForce,
-  extractSectionIA,
-  hasTpInForceList,
   findPageForCorrection,
 } from "@/lib/parser";
+import { getWeekData } from "@/lib/weekData";
 import { log, perf } from "@/lib/logger";
 
 export const maxDuration = 60;
@@ -91,120 +88,22 @@ export async function POST(request) {
       );
     }
 
-    // 3. Resolve the week's parsed PDF text.
-    //    The parsed text is identical for all users for a given week, so it's
-    //    cached in WeekCache: only the first check of a week pays the cost of
-    //    downloading + parsing the PDFs; everyone after reuses the cache.
+    // 3. Resolve the week's parsed PDF text (cached in WeekCache; see lib/weekData).
     const startTime = Date.now();
-    let sniiText = null; // Section II full text (corrections + new T&P)
-    let pageTexts = null; // per-page text for PDF page lookup
-    let sectionIAText = null; // Section IA text (T&P in force list), may be ""
-    let hasInForce = false;
-    let links = [];
-    let weekInfo = null;
-    let cacheHit = false;
-    const failures = [];
-
-    const cacheKey = (y, w) => ({ weekYear_weekNumber: { weekYear: y, weekNumber: w } });
-
-    // Past week with a known key: try the cache before any network call.
-    if (requestedYear && requestedWeek) {
-      const cached = await prisma.weekCache.findUnique({
-        where: cacheKey(requestedYear, requestedWeek),
-      });
-      if (cached) {
-        ({ sniiText, pageTexts, sectionIAText, links, weekInfo, hasInForce } = cached);
-        cacheHit = true;
-      }
-    }
-
-    // No direct hit — fetch the weekly page (also tells us the current week).
-    if (!cacheHit) {
-      let t0 = Date.now();
-      const html = await fetchWeeklyPage(
-        requestedYear && requestedWeek
-          ? { year: requestedYear, week: requestedWeek }
-          : {}
-      );
-      perf("fetchWeeklyPage", Date.now() - t0);
-      const parsed = parsePageLinks(html);
-      links = parsed.links;
-      weekInfo = parsed.weekInfo;
-
-      // Now that we know the week number, try the cache again (current week).
-      const cached = await prisma.weekCache.findUnique({
-        where: cacheKey(weekInfo.year, weekInfo.week),
-      });
-      if (cached) {
-        sniiText = cached.sniiText;
-        pageTexts = cached.pageTexts;
-        sectionIAText = cached.sectionIAText;
-        hasInForce = cached.hasInForce;
-        links = cached.links; // full link list incl. block PDFs
-        weekInfo = cached.weekInfo;
-        cacheHit = true;
-      } else {
-        // Cache miss — download + parse both PDFs (the expensive path).
-        const { weeklyNtm, sectionII } = identifyPDFs(links, charts);
-        t0 = Date.now();
-        const [sniiResult, wknmResult] = await Promise.all([
-          sectionII
-            ? downloadAndParsePDFWithPages(sectionII.url)
-                .then((data) => ({ ok: true, data }))
-                .catch((err) => ({ ok: false, error: err.message }))
-            : Promise.resolve(null),
-          weeklyNtm
-            ? downloadAndParsePDF(weeklyNtm.url)
-                .then((text) => ({ ok: true, text }))
-                .catch((err) => ({ ok: false, error: err.message }))
-            : Promise.resolve(null),
-        ]);
-        perf("downloadPDFs (parallel)", Date.now() - t0);
-
-        if (sniiResult?.ok) {
-          sniiText = sniiResult.data.text;
-          pageTexts = sniiResult.data.pageTexts;
-        } else if (sniiResult && !sniiResult.ok) {
-          log("error", "Section II PDF download/parse failed", sniiResult.error);
-          failures.push("Section II (corrections) PDF failed to load");
-        } else if (!sectionII) {
-          log("warn", "Section II PDF not found on UKHO page");
-          failures.push("Section II PDF not found on UKHO page");
-        }
-
-        if (wknmResult?.ok) {
-          sectionIAText = extractSectionIA(wknmResult.text);
-          hasInForce = hasTpInForceList(sectionIAText);
-        } else if (wknmResult && !wknmResult.ok) {
-          log("error", "Weekly NtM PDF download/parse failed", wknmResult.error);
-          failures.push("Weekly NtM (T&P in force) PDF failed to load");
-        } else if (!weeklyNtm) {
-          log("warn", "Weekly NtM PDF not found on UKHO page");
-          failures.push("Weekly NtM PDF not found on UKHO page");
-        }
-
-        // Cache the parsed week for everyone (only when we got Section II).
-        if (sniiText !== null) {
-          await prisma.weekCache.upsert({
-            where: cacheKey(weekInfo.year, weekInfo.week),
-            update: { sniiText, pageTexts, sectionIAText: sectionIAText || "", links, weekInfo, hasInForce },
-            create: {
-              weekYear: weekInfo.year,
-              weekNumber: weekInfo.week,
-              sniiText,
-              pageTexts,
-              sectionIAText: sectionIAText || "",
-              links,
-              weekInfo,
-              hasInForce,
-            },
-          });
-          log("info", `Cached parsed Wk ${weekInfo.week}/${weekInfo.year}`);
-        }
-      }
-    }
-    perf("resolveWeek", Date.now() - startTime);
-    log("info", `WeekCache ${cacheHit ? "HIT" : "MISS"} for Wk ${weekInfo.week}/${weekInfo.year}`);
+    const {
+      sniiText,
+      pageTexts,
+      sectionIAText,
+      hasInForce,
+      links,
+      weekInfo,
+      fromCache: cacheHit,
+      failures,
+    } = await getWeekData(
+      requestedYear && requestedWeek
+        ? { year: requestedYear, week: requestedWeek }
+        : {}
+    );
 
     // Identify PDFs from the (cached or fresh) link list for this user's charts.
     const { weeklyNtm, sectionII, chartBlocks, allChartBlocks } = identifyPDFs(
