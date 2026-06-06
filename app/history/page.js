@@ -13,21 +13,31 @@ export default function HistoryPage() {
   const [expandedId, setExpandedId] = useState(null);
   const [expandedResults, setExpandedResults] = useState({});
   const [loadingDetail, setLoadingDetail] = useState(null);
+  const [query, setQuery] = useState("");
+  const [findingsOnly, setFindingsOnly] = useState(false);
 
   useEffect(() => {
-    async function loadHistory() {
+    let cancelled = false;
+    const params = new URLSearchParams();
+    if (query.trim()) params.set("q", query.trim());
+    if (findingsOnly) params.set("findingsOnly", "true");
+    const t = setTimeout(async () => {
+      setLoading(true);
       try {
-        const res = await fetch("/api/checks");
+        const res = await fetch(`/api/checks?${params.toString()}`);
         const data = await res.json();
-        setChecks(data.checks || []);
+        if (!cancelled) setChecks(data.checks || []);
       } catch {
-        setError("Failed to load check history");
+        if (!cancelled) setError("Failed to load check history");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
-    }
-    loadHistory();
-  }, []);
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [query, findingsOnly]);
 
   async function handleExpand(id) {
     if (expandedId === id) {
@@ -75,6 +85,26 @@ export default function HistoryPage() {
             Check History
           </h2>
 
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by vessel name"
+              className="input-field flex-1"
+              aria-label="Search history by vessel name"
+            />
+            <label className="inline-flex items-center gap-2 text-sm text-slate-600 select-none px-1 min-h-[44px]">
+              <input
+                type="checkbox"
+                checked={findingsOnly}
+                onChange={(e) => setFindingsOnly(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-navy-700 focus:ring-navy-600/30"
+              />
+              Findings only
+            </label>
+          </div>
+
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
@@ -93,12 +123,27 @@ export default function HistoryPage() {
               {error}
             </div>
           ) : checks.length === 0 ? (
-            <div className="card p-8 text-center">
-              <p className="text-slate-500 text-sm">No checks yet.</p>
-              <Link href="/" className="text-navy-700 text-sm font-medium hover:text-navy-900 mt-2 inline-block transition-colors">
-                Run your first check from the dashboard
-              </Link>
-            </div>
+            query.trim() || findingsOnly ? (
+              <div className="card p-8 text-center">
+                <p className="text-slate-500 text-sm">No checks match your filters.</p>
+                <button
+                  onClick={() => {
+                    setQuery("");
+                    setFindingsOnly(false);
+                  }}
+                  className="text-navy-700 text-sm font-medium hover:text-navy-900 mt-2 inline-block transition-colors"
+                >
+                  Clear filters
+                </button>
+              </div>
+            ) : (
+              <div className="card p-8 text-center">
+                <p className="text-slate-500 text-sm">No checks yet.</p>
+                <Link href="/" className="text-navy-700 text-sm font-medium hover:text-navy-900 mt-2 inline-block transition-colors">
+                  Run your first check from the dashboard
+                </Link>
+              </div>
+            )
           ) : (
             weeks.map((week) => (
               <div key={`${week.weekYear}-${week.weekNumber}`}>

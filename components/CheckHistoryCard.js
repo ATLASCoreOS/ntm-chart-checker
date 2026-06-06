@@ -2,6 +2,7 @@
 
 import ResultsSummary from "./ResultsSummary";
 import ChartResult from "./ChartResult";
+import DownloadPDFButton from "./DownloadPDFButton";
 
 export default function CheckHistoryCard({ check, expanded, expandedResult, onExpand, loadingDetail }) {
   const date = new Date(check.checkedAt).toLocaleString("en-GB", {
@@ -12,7 +13,8 @@ export default function CheckHistoryCard({ check, expanded, expandedResult, onEx
     minute: "2-digit",
   });
 
-  const hasFindings = check.totalCorrections > 0 || check.totalTP > 0;
+  const hasFindings =
+    check.totalCorrections > 0 || check.totalTP > 0 || check.totalTPInForce > 0;
 
   return (
     <div className="card-interactive overflow-hidden">
@@ -55,6 +57,9 @@ export default function CheckHistoryCard({ check, expanded, expandedResult, onEx
             </div>
           ) : expandedResult ? (
             <div className="space-y-3">
+              <div className="flex justify-end">
+                <DownloadPDFButton checkId={check.id} />
+              </div>
               <ResultsSummary result={expandedResult} />
               <div className="card overflow-hidden">
                 <div className="divide-y divide-slate-100">

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { validateCharts, DEFAULT_CHARTS } from "@/lib/charts";
+import { getChartName } from "@/lib/chartNames";
 import { COOLDOWN_SECONDS } from "@/lib/constants";
 import { fetchWeeklyPage, parsePageLinks, identifyPDFs } from "@/lib/scraper";
 import {
@@ -303,9 +304,13 @@ export async function POST(request) {
     const durationMs = Date.now() - startTime;
     perf("totalCheck", durationMs);
 
+    const chartNames = {};
+    for (const chart of charts) chartNames[chart] = getChartName(chart);
+
     const result = {
       weekInfo,
       charts,
+      chartNames,
       vesselName: folio?.vesselName || null,
       corrections,
       tpNotices,

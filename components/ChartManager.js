@@ -1,18 +1,68 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+
+// Pull every 1–5 digit number out of free text ("1534, 1535 1543\n2052")
+function parseNumbers(text) {
+  return (text.match(/\d{1,5}/g) || [])
+    .map((s) => parseInt(s, 10))
+    .filter((n) => n > 0 && n <= 99999);
+}
 
 export default function ChartManager({ charts, chartsLoading, onChartsChange }) {
   const [editing, setEditing] = useState(false);
   const [input, setInput] = useState("");
+  const [names, setNames] = useState({}); // number -> title (null if unknown)
+  const [suggestions, setSuggestions] = useState([]);
+  const debounceRef = useRef(null);
 
-  function addChart() {
-    const num = parseInt(input, 10);
-    if (isNaN(num) || num <= 0 || num > 99999) return;
-    if (charts.includes(num)) return;
-    const updated = [...charts, num].sort((a, b) => a - b);
-    onChartsChange(updated);
+  // Resolve titles for the charts currently in the folio (one batch request)
+  useEffect(() => {
+    const missing = charts.filter((c) => !(c in names));
+    if (missing.length === 0) return;
+    let cancelled = false;
+    fetch(`/api/charts?nums=${missing.join(",")}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled && d.names) setNames((prev) => ({ ...prev, ...d.names }));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [charts, names]);
+
+  // Debounced typeahead while editing
+  useEffect(() => {
+    const q = input.trim();
+    if (!editing || !q || /[,\s]/.test(q)) {
+      setSuggestions([]);
+      return;
+    }
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetch(`/api/charts?q=${encodeURIComponent(q)}`)
+        .then((r) => r.json())
+        .then((d) => setSuggestions(d.results || []))
+        .catch(() => setSuggestions([]));
+    }, 200);
+    return () => clearTimeout(debounceRef.current);
+  }, [input, editing]);
+
+  function addNumbers(nums) {
+    const fresh = nums.filter((n) => !charts.includes(n));
+    if (fresh.length === 0) {
+      setInput("");
+      setSuggestions([]);
+      return;
+    }
+    onChartsChange([...charts, ...fresh].sort((a, b) => a - b));
     setInput("");
+    setSuggestions([]);
+  }
+
+  function addFromInput() {
+    addNumbers(parseNumbers(input));
   }
 
   function removeChart(num) {
@@ -22,7 +72,7 @@ export default function ChartManager({ charts, chartsLoading, onChartsChange }) 
   function handleKeyDown(e) {
     if (e.key === "Enter") {
       e.preventDefault();
-      addChart();
+      addFromInput();
     }
   }
 
@@ -37,7 +87,7 @@ export default function ChartManager({ charts, chartsLoading, onChartsChange }) 
         </div>
         <button
           onClick={() => setEditing(!editing)}
-          className="btn-secondary text-xs py-1.5 px-3"
+          className="btn-secondary text-sm min-h-[44px] py-2 px-4"
         >
           {editing ? "Done" : "Edit"}
         </button>
@@ -55,20 +105,26 @@ export default function ChartManager({ charts, chartsLoading, onChartsChange }) 
             {charts.map((chart) => (
               <span
                 key={chart}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-medium transition-colors duration-150 ${
+                title={names[chart] || undefined}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 ${
                   editing
                     ? "bg-slate-100 text-slate-700 border border-slate-200"
                     : "bg-slate-50 text-slate-700 border border-slate-100"
                 }`}
               >
-                {chart}
+                <span className="font-mono">{chart}</span>
+                {names[chart] && (
+                  <span className="text-2xs text-slate-400 font-normal max-w-[10rem] truncate hidden sm:inline">
+                    {names[chart]}
+                  </span>
+                )}
                 {editing && (
                   <button
                     onClick={() => removeChart(chart)}
                     aria-label={`Remove chart ${chart}`}
-                    className="text-slate-400 hover:text-red-500 transition-colors duration-150 -mr-0.5"
+                    className="ml-0.5 -mr-1 p-1.5 text-slate-400 hover:text-red-500 transition-colors duration-150"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -81,18 +137,44 @@ export default function ChartManager({ charts, chartsLoading, onChartsChange }) 
           </div>
 
           {editing && (
-            <div className="flex gap-2 mt-4">
-              <input
-                type="number"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Chart number"
-                className="input-field flex-1"
-              />
-              <button onClick={addChart} className="btn-primary px-4">
-                Add
-              </button>
+            <div className="mt-4">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Add charts — number or name; paste many"
+                    className="input-field w-full"
+                    autoComplete="off"
+                    aria-label="Add chart numbers"
+                  />
+                  {suggestions.length > 0 && (
+                    <ul className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-elevated max-h-64 overflow-auto">
+                      {suggestions.map((s) => (
+                        <li key={s.number}>
+                          <button
+                            type="button"
+                            onClick={() => addNumbers([s.number])}
+                            className="w-full text-left px-3 py-2.5 hover:bg-slate-50 flex items-baseline gap-2"
+                          >
+                            <span className="font-mono text-sm text-slate-800">{s.number}</span>
+                            <span className="text-xs text-slate-500 truncate">{s.name}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <button onClick={addFromInput} className="btn-primary min-h-[44px] px-4">
+                  Add
+                </button>
+              </div>
+              <p className="text-2xs text-slate-400 mt-1.5">
+                Tip: paste a whole list — e.g. <span className="font-mono">1534, 1535 1543</span>
+              </p>
             </div>
           )}
         </>
