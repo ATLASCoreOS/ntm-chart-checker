@@ -17,6 +17,18 @@ function subjectOf(excerpt) {
   return first.replace(/^\d{3,5}\*?\s*/, "").trim().slice(0, 120);
 }
 
+// The "[ previous update X ]" token tells us what this correction supersedes.
+// When X is "New Edition DD/MM/YYYY" this is the first correction of the current
+// edition — i.e. the back-scan boundary for that chart.
+function editionDateOf(excerpt) {
+  if (!excerpt) return null;
+  const m = excerpt.match(/previous update\s+New Edition\s+(\d{2}\/\d{2}\/\d{4})/i);
+  if (m) return m[1];
+  // Some notices say "New Edition" without a date, or "New Edition <date>" inline
+  if (/previous update\s+New Edition/i.test(excerpt)) return "unknown";
+  return null;
+}
+
 // GET /api/corrections-log/week?year=&week=
 // Corrections affecting the active folio's charts for one week (cached).
 export async function GET(request) {
@@ -58,7 +70,13 @@ export async function GET(request) {
     const corrections = findCorrections(sniiText, charts);
     for (const chart of charts) {
       for (const c of corrections[chart] || []) {
-        items.push({ chart, nmNumber: c.nmNumber, subject: subjectOf(c.excerpt) });
+        const editionDate = editionDateOf(c.excerpt);
+        items.push({
+          chart,
+          nmNumber: c.nmNumber,
+          subject: subjectOf(c.excerpt),
+          editionDate, // non-null => this is the chart's edition boundary
+        });
       }
     }
   }
