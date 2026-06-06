@@ -49,7 +49,7 @@ export async function POST(request) {
   } catch (error) {
     console.error("PDF generation error:", error);
     return Response.json(
-      { error: "PDF generation failed", message: error.message },
+      { error: "PDF generation failed. Please try again." },
       { status: 500 }
     );
   }

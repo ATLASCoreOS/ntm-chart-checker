@@ -12,6 +12,7 @@ import {
 } from "@/lib/parser";
 
 export const maxDuration = 60;
+export const dynamic = "force-dynamic";
 
 /**
  * Debug endpoint — visit in browser to see raw parser output as plain text.
@@ -22,6 +23,15 @@ export async function GET() {
     const session = await auth();
     if (!session?.user?.id) {
       return new Response("Unauthorized", { status: 401 });
+    }
+
+    // Diagnostics endpoint — restrict to allow-listed admin emails
+    const admins = (process.env.ADMIN_EMAILS || "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    if (!admins.includes((session.user.email || "").toLowerCase())) {
+      return new Response("Not found", { status: 404 });
     }
 
     // Resolve the active folio (userId is not unique — a user may have many)
@@ -133,7 +143,8 @@ export async function GET() {
       headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" },
     });
   } catch (error) {
-    return new Response(`Error: ${error.message}\n${error.stack}`, {
+    console.error("debug-check error:", error);
+    return new Response("Error running diagnostics", {
       status: 500,
       headers: { "Content-Type": "text/plain" },
     });

@@ -49,12 +49,16 @@ export async function POST(request) {
       }
     }
 
-    // Parse optional year/week from request body
+    // Parse optional year/week from request body (validated)
     let requestedYear, requestedWeek;
     try {
       const body = await request.json();
-      requestedYear = body?.year;
-      requestedWeek = body?.week;
+      const y = parseInt(body?.year, 10);
+      const w = parseInt(body?.week, 10);
+      if (y >= 2023 && y <= 2100 && w >= 1 && w <= 53) {
+        requestedYear = y;
+        requestedWeek = w;
+      }
     } catch {
       // No body or invalid JSON — check current week
     }
@@ -300,9 +304,9 @@ export async function POST(request) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Check failed:", error);
+    log("error", "Check failed", error.message);
     return NextResponse.json(
-      { error: "Check failed", message: error.message, checkedAt },
+      { error: "Check failed. Please try again.", checkedAt },
       { status: 500 }
     );
   }

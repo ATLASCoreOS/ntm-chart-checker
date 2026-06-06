@@ -21,11 +21,15 @@ export async function GET(request) {
     return new Response("Missing url parameter", { status: 400 });
   }
 
-  // Only allow Admiralty domain
+  // Only allow https Admiralty NtM download URLs (defence-in-depth against SSRF)
   try {
     const parsed = new URL(pdfUrl);
-    if (parsed.hostname !== "msi.admiralty.co.uk") {
-      return new Response("Forbidden domain", { status: 403 });
+    if (
+      parsed.protocol !== "https:" ||
+      parsed.hostname !== "msi.admiralty.co.uk" ||
+      !parsed.pathname.startsWith("/NoticesToMariners/")
+    ) {
+      return new Response("Forbidden URL", { status: 403 });
     }
   } catch {
     return new Response("Invalid URL", { status: 400 });
