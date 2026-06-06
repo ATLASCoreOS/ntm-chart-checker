@@ -70,6 +70,9 @@ export async function GET(request) {
     const corrections = findCorrections(sniiText, charts);
     for (const chart of charts) {
       for (const c of corrections[chart] || []) {
+        // Permanent corrections only — Section II also carries T&P notices
+        // (NNNN(T)/YY, NNNN(P)/YY), which are tracked separately, not "applied".
+        if (/\([TP]\)/.test(c.nmNumber)) continue;
         const editionDate = editionDateOf(c.excerpt);
         items.push({
           chart,
