@@ -258,12 +258,12 @@ export default function Dashboard() {
               <ResultsSummary result={result} />
 
               <div className="card overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-100">
-                  <h2 className="text-sm font-semibold text-slate-900">
+                <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+                  <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     Chart-by-Chart Results
                   </h2>
                 </div>
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
                   {result.charts.map((chart) => (
                     <ChartResult
                       key={chart}

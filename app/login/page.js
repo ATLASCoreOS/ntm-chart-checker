@@ -8,7 +8,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
       <div className="max-w-sm w-full">
         <div className="text-center mb-8">
-          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
             NtM Checker
           </h1>
           <p className="text-sm text-slate-500 mt-1">

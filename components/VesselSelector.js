@@ -113,7 +113,7 @@ export default function VesselSelector({
             />
           </svg>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-900 truncate">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
               {activeFolio?.vesselName || "Select Vessel"}
             </p>
             <p className="text-2xs text-slate-400 mt-0.5 tabular-nums">
@@ -149,7 +149,7 @@ export default function VesselSelector({
                 {editingId === folio.id ? (
                   <form
                     onSubmit={(e) => handleRenameSubmit(e, folio.id)}
-                    className="flex items-center gap-2 px-4 py-3 border-b border-slate-100"
+                    className="flex items-center gap-2 px-4 py-3 border-b border-slate-100 dark:border-slate-800"
                   >
                     <input
                       ref={editInputRef}
@@ -177,8 +177,8 @@ export default function VesselSelector({
                     </button>
                   </form>
                 ) : confirmDeleteId === folio.id ? (
-                  <div className="flex items-center justify-between px-4 py-3 bg-red-50 border-b border-slate-100">
-                    <span className="text-2xs text-red-700">
+                  <div className="flex items-center justify-between px-4 py-3 bg-red-50 dark:bg-red-950/30 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-2xs text-red-700 dark:text-red-300">
                       Delete {folio.vesselName}?
                     </span>
                     <div className="flex items-center gap-2">
@@ -197,10 +197,10 @@ export default function VesselSelector({
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center border-b border-slate-100 group">
+                  <div className="flex items-center border-b border-slate-100 dark:border-slate-800 group">
                     <button
                       onClick={() => handleSelect(folio.id)}
-                      className="flex-1 text-left px-4 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors min-w-0"
+                      className="flex-1 text-left px-4 py-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors min-w-0"
                     >
                       <span
                         className={`w-2 h-2 rounded-full shrink-0 ${
@@ -213,8 +213,8 @@ export default function VesselSelector({
                         <p
                           className={`text-sm truncate ${
                             folio.id === activeFolioId
-                              ? "font-semibold text-navy-900"
-                              : "text-slate-700"
+                              ? "font-semibold text-navy-900 dark:text-navy-200"
+                              : "text-slate-700 dark:text-slate-300"
                           }`}
                         >
                           {folio.vesselName}
@@ -280,7 +280,7 @@ export default function VesselSelector({
           {addMode ? (
             <form
               onSubmit={handleAddSubmit}
-              className="flex items-center gap-2 px-4 py-3 bg-slate-50"
+              className="flex items-center gap-2 px-4 py-3 bg-slate-50 dark:bg-slate-800/60"
             >
               <input
                 ref={addInputRef}
@@ -322,7 +322,7 @@ export default function VesselSelector({
                 setEditingId(null);
                 setConfirmDeleteId(null);
               }}
-              className="w-full text-left px-4 py-3 flex items-center gap-2 text-sm text-navy-700 hover:bg-slate-50 transition-colors font-medium"
+              className="w-full text-left px-4 py-3 flex items-center gap-2 text-sm text-navy-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors font-medium"
             >
               <svg
                 className="w-4 h-4"

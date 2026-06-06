@@ -81,7 +81,7 @@ export default function HistoryPage() {
 
       <main className="flex-1">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-5">
-          <h2 className="text-base font-semibold text-slate-900">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
             Check History
           </h2>
 
@@ -109,8 +109,8 @@ export default function HistoryPage() {
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="card p-5 animate-pulse">
-                  <div className="h-4 bg-slate-100 rounded w-1/3 mb-2.5" />
-                  <div className="h-3 bg-slate-100 rounded w-2/3" />
+                  <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-1/3 mb-2.5" />
+                  <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-2/3" />
                 </div>
               ))}
             </div>
@@ -147,7 +147,7 @@ export default function HistoryPage() {
           ) : (
             weeks.map((week) => (
               <div key={`${week.weekYear}-${week.weekNumber}`}>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2.5">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2.5">
                   Week {String(week.weekNumber).padStart(2, "0")}/{week.weekYear}
                 </h3>
                 <div className="space-y-2">

@@ -238,11 +238,11 @@ export default function CorrectionItem({ correction, chartNumber, sectionIIUrl }
   const handlePdfError = useCallback(() => setShowText(true), []);
 
   return (
-    <div className="border border-red-100 rounded-lg overflow-hidden bg-white">
+    <div className="border border-red-100 dark:border-red-900/60 rounded-lg overflow-hidden bg-white dark:bg-slate-900">
       {/* NM number header */}
-      <div className="bg-red-50/60 px-4 py-2 flex items-center justify-between">
+      <div className="bg-red-50/60 dark:bg-red-950/30 px-4 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <span className="text-sm font-semibold text-red-800 font-mono">
+          <span className="text-sm font-semibold text-red-800 dark:text-red-200 font-mono">
             NM {correction.nmNumber}
           </span>
           {correction.isPdfBlock && (
@@ -276,12 +276,12 @@ export default function CorrectionItem({ correction, chartNumber, sectionIIUrl }
       {showText && (
         <>
           {(subject || source || previousUpdate) && (
-            <div className="px-4 py-2.5 border-t border-red-50 space-y-0.5">
+            <div className="px-4 py-2.5 border-t border-red-50 dark:border-red-900/40 space-y-0.5">
               {subject && (
-                <p className="text-xs font-semibold text-slate-800">{subject}</p>
+                <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">{subject}</p>
               )}
               {(source || (previousUpdate && !hasSubSections)) && (
-                <div className="flex flex-wrap gap-x-4 text-2xs text-slate-500">
+                <div className="flex flex-wrap gap-x-4 text-2xs text-slate-500 dark:text-slate-400">
                   {source && (
                     <span><span className="font-medium text-slate-400">Source</span> {source}</span>
                   )}
@@ -294,18 +294,18 @@ export default function CorrectionItem({ correction, chartNumber, sectionIIUrl }
           )}
 
           {body && !hasSubSections && (
-            <div className="px-4 py-3 border-t border-red-50">
-              <pre className="text-xs text-slate-600 whitespace-pre-wrap break-words font-[inherit] leading-relaxed m-0">
+            <div className="px-4 py-3 border-t border-red-50 dark:border-red-900/40">
+              <pre className="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-wrap break-words font-[inherit] leading-relaxed m-0">
                 {body}
               </pre>
             </div>
           )}
 
           {hasSubSections && bodySections.map((section, i) => (
-            <div key={i} className="border-t border-red-50">
+            <div key={i} className="border-t border-red-50 dark:border-red-900/40">
               {section.chartRef && (
-                <div className="px-4 py-1.5 bg-slate-50 flex flex-wrap items-baseline gap-x-3">
-                  <span className="text-xs font-semibold text-slate-700 font-mono">
+                <div className="px-4 py-1.5 bg-slate-50 dark:bg-slate-800/60 flex flex-wrap items-baseline gap-x-3">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 font-mono">
                     Chart {section.chartRef}
                   </span>
                   {section.panel && (
@@ -322,7 +322,7 @@ export default function CorrectionItem({ correction, chartNumber, sectionIIUrl }
               )}
               {section.text && (
                 <div className="px-4 py-2.5">
-                  <pre className="text-xs text-slate-600 whitespace-pre-wrap break-words font-[inherit] leading-relaxed m-0">
+                  <pre className="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-wrap break-words font-[inherit] leading-relaxed m-0">
                     {section.text}
                   </pre>
                 </div>
@@ -332,7 +332,7 @@ export default function CorrectionItem({ correction, chartNumber, sectionIIUrl }
 
           {!subject && !body && correction.excerpt && (
             <div className="px-4 py-3">
-              <pre className="text-xs text-slate-600 whitespace-pre-wrap break-words font-[inherit] leading-relaxed m-0">
+              <pre className="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-wrap break-words font-[inherit] leading-relaxed m-0">
                 {correction.excerpt}
               </pre>
             </div>

@@ -11,17 +11,17 @@ export default function ChartResult({ chart, chartName, corrections, tpNotices, 
 
   let statusDot = "bg-emerald-400";
   let badgeText = "Clear";
-  let badgeClass = "text-emerald-700 bg-emerald-50";
+  let badgeClass = "text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/40";
 
   if (corrections.length > 0) {
     statusDot = "bg-red-400";
     badgeText = `${corrections.length} correction${corrections.length > 1 ? "s" : ""}`;
-    badgeClass = "text-red-700 bg-red-50";
+    badgeClass = "text-red-700 bg-red-50 dark:text-red-300 dark:bg-red-950/40";
   } else if (tpNotices.length > 0 || tpInForce.length > 0) {
     statusDot = "bg-amber-400";
     const count = tpNotices.length + tpInForce.length;
     badgeText = `${count} T&P`;
-    badgeClass = "text-amber-700 bg-amber-50";
+    badgeClass = "text-amber-700 bg-amber-50 dark:text-amber-300 dark:bg-amber-950/40";
   }
 
   return (
@@ -100,21 +100,21 @@ export default function ChartResult({ chart, chartName, corrections, tpNotices, 
               </h4>
               <div className="space-y-2">
                 {tpInForce.map((tp, i) => (
-                  <div key={i} className="border border-sky-100 rounded-lg overflow-hidden">
-                    <div className="bg-sky-50 px-4 py-2">
-                      <span className="text-sm font-semibold text-sky-800 font-mono">
+                  <div key={i} className="border border-sky-100 dark:border-sky-900 rounded-lg overflow-hidden">
+                    <div className="bg-sky-50 dark:bg-sky-950/40 px-4 py-2">
+                      <span className="text-sm font-semibold text-sky-800 dark:text-sky-200 font-mono">
                         {tp.nmNumber}
                       </span>
                     </div>
-                    <div className="px-4 py-2.5 bg-white space-y-1">
+                    <div className="px-4 py-2.5 bg-white dark:bg-slate-900 space-y-1">
                       {tp.subject && (
-                        <p className="text-2xs text-slate-600">
-                          <span className="font-medium text-slate-400 mr-1">Subject</span>
+                        <p className="text-2xs text-slate-600 dark:text-slate-300">
+                          <span className="font-medium text-slate-400 dark:text-slate-500 mr-1">Subject</span>
                           {tp.subject}
                         </p>
                       )}
-                      <p className="text-2xs text-slate-600">
-                        <span className="font-medium text-slate-400 mr-1">Charts</span>
+                      <p className="text-2xs text-slate-600 dark:text-slate-300">
+                        <span className="font-medium text-slate-400 dark:text-slate-500 mr-1">Charts</span>
                         <span className="font-mono">{tp.charts}</span>
                       </p>
                     </div>

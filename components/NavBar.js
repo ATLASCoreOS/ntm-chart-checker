@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
+import ThemeToggle from "./ThemeToggle";
 
 export default function NavBar({ activePage }) {
   const { data: session } = useSession();
@@ -28,8 +29,9 @@ export default function NavBar({ activePage }) {
                 History
               </NavLink>
 
-              <div className="ml-3 pl-3 border-l border-navy-700 flex items-center gap-3">
-                <span className="text-2xs text-navy-200 hidden sm:inline truncate max-w-[160px]">
+              <div className="ml-2 pl-2 border-l border-navy-700 flex items-center gap-2">
+                <ThemeToggle />
+                <span className="text-2xs text-navy-200 hidden sm:inline truncate max-w-[140px]">
                   {session.user.email}
                 </span>
                 <button

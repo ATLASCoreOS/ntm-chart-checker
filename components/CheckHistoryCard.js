@@ -26,13 +26,13 @@ export default function CheckHistoryCard({ check, expanded, expandedResult, onEx
         <div className="flex items-center gap-3 min-w-0">
           <span className={`w-2 h-2 rounded-full shrink-0 ${hasFindings ? "bg-red-400" : "bg-emerald-400"}`} />
           <div className="min-w-0">
-            <p className="text-sm font-medium text-slate-900">
+            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
               {check.vesselName && (
-                <span className="text-navy-700">{check.vesselName}<span className="mx-1.5 text-slate-200">|</span></span>
+                <span className="text-navy-700 dark:text-navy-300">{check.vesselName}<span className="mx-1.5 text-slate-200 dark:text-slate-700">|</span></span>
               )}
               {date}
             </p>
-            <p className="text-2xs text-slate-400 mt-0.5 tabular-nums">
+            <p className="text-2xs text-slate-400 dark:text-slate-500 mt-0.5 tabular-nums">
               {check.charts.length} charts &middot; {check.totalCorrections} correction{check.totalCorrections !== 1 ? "s" : ""} &middot; {check.totalTP} T&P
             </p>
           </div>
@@ -49,7 +49,7 @@ export default function CheckHistoryCard({ check, expanded, expandedResult, onEx
       </button>
 
       {expanded && (
-        <div className="border-t border-slate-100 p-5 animate-slide-down">
+        <div className="border-t border-slate-100 dark:border-slate-800 p-5 animate-slide-down">
           {loadingDetail ? (
             <div className="flex items-center gap-2 text-2xs text-slate-400 py-4 justify-center">
               <span className="w-4 h-4 border-2 border-navy-300 border-t-navy-700 rounded-full animate-spin" />
@@ -62,7 +62,7 @@ export default function CheckHistoryCard({ check, expanded, expandedResult, onEx
               </div>
               <ResultsSummary result={expandedResult} />
               <div className="card overflow-hidden">
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
                   {expandedResult.charts.map((chart) => (
                     <ChartResult
                       key={chart}

@@ -80,8 +80,8 @@ export default function ChartManager({ charts, chartsLoading, onChartsChange }) 
     <div className="card p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">Your Charts</h2>
-          <p className="text-2xs text-slate-400 mt-0.5">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Your Charts</h2>
+          <p className="text-2xs text-slate-400 dark:text-slate-500 mt-0.5">
             {charts.length} chart{charts.length !== 1 ? "s" : ""} in folio
           </p>
         </div>
@@ -108,8 +108,8 @@ export default function ChartManager({ charts, chartsLoading, onChartsChange }) 
                 title={names[chart] || undefined}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 ${
                   editing
-                    ? "bg-slate-100 text-slate-700 border border-slate-200"
-                    : "bg-slate-50 text-slate-700 border border-slate-100"
+                    ? "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
+                    : "bg-slate-50 text-slate-700 border border-slate-100 dark:bg-slate-800/60 dark:text-slate-200 dark:border-slate-800"
                 }`}
               >
                 <span className="font-mono">{chart}</span>
@@ -152,16 +152,16 @@ export default function ChartManager({ charts, chartsLoading, onChartsChange }) 
                     aria-label="Add chart numbers"
                   />
                   {suggestions.length > 0 && (
-                    <ul className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-elevated max-h-64 overflow-auto">
+                    <ul className="absolute z-20 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-elevated max-h-64 overflow-auto">
                       {suggestions.map((s) => (
                         <li key={s.number}>
                           <button
                             type="button"
                             onClick={() => addNumbers([s.number])}
-                            className="w-full text-left px-3 py-2.5 hover:bg-slate-50 flex items-baseline gap-2"
+                            className="w-full text-left px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-baseline gap-2"
                           >
-                            <span className="font-mono text-sm text-slate-800">{s.number}</span>
-                            <span className="text-xs text-slate-500 truncate">{s.name}</span>
+                            <span className="font-mono text-sm text-slate-800 dark:text-slate-100">{s.number}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{s.name}</span>
                           </button>
                         </li>
                       ))}

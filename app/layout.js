@@ -22,7 +22,14 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(!t)t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';var c=document.documentElement.classList;c.remove('dark','night');if(t==='dark')c.add('dark');else if(t==='night'){c.add('dark');c.add('night');}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <SessionProvider>
           <div className="min-h-screen flex flex-col">{children}</div>

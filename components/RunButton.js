@@ -49,10 +49,10 @@ export default function RunButton({
 
       {loading && (
         <div className="mt-4 animate-fade-in">
-          <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full w-1/3 bg-navy-700 rounded-full animate-progress" />
+          <div className="h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+            <div className="h-full w-1/3 bg-navy-700 dark:bg-navy-400 rounded-full animate-progress" />
           </div>
-          <p className="text-2xs text-slate-400 mt-2">{helperText}</p>
+          <p className="text-2xs text-slate-400 dark:text-slate-500 mt-2">{helperText}</p>
         </div>
       )}
     </div>
