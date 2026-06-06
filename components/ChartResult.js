@@ -4,9 +4,10 @@ import { useState } from "react";
 import CorrectionItem from "./CorrectionItem";
 import TPItem from "./TPItem";
 
-export default function ChartResult({ chart, corrections, tpNotices, tpInForce = [], sectionIIUrl }) {
+export default function ChartResult({ chart, chartName, corrections, tpNotices, tpInForce = [], sectionIIUrl }) {
   const hasFindings = corrections.length > 0 || tpNotices.length > 0 || tpInForce.length > 0;
   const [open, setOpen] = useState(hasFindings);
+  const panelId = `chart-${chart}-panel`;
 
   let statusDot = "bg-emerald-400";
   let badgeText = "Clear";
@@ -27,14 +28,20 @@ export default function ChartResult({ chart, corrections, tpNotices, tpInForce =
     <div>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-colors duration-150"
+        className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-150 min-h-[44px]"
         aria-expanded={open}
+        aria-controls={panelId}
       >
-        <div className="flex items-center gap-3">
-          <span className={`w-2 h-2 rounded-full shrink-0 ${statusDot}`} />
-          <span className="font-medium text-slate-900 text-sm font-mono">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${statusDot}`} />
+          <span className="font-medium text-slate-900 dark:text-slate-100 text-sm font-mono shrink-0">
             {chart}
           </span>
+          {chartName && (
+            <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
+              {chartName}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2.5">
           <span className={`text-2xs font-medium px-2 py-0.5 rounded-md ${badgeClass}`}>
@@ -53,7 +60,7 @@ export default function ChartResult({ chart, corrections, tpNotices, tpInForce =
       </button>
 
       {open && (
-        <div className="px-5 pb-4 animate-slide-down">
+        <div id={panelId} className="px-5 pb-4 animate-slide-down">
           {!hasFindings && (
             <p className="text-emerald-600 text-sm py-2">
               No corrections or T&P notices for this chart.

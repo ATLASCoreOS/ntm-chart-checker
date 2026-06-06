@@ -67,6 +67,7 @@ export default function CheckHistoryCard({ check, expanded, expandedResult, onEx
                     <ChartResult
                       key={chart}
                       chart={chart}
+                      chartName={expandedResult.chartNames?.[chart]}
                       corrections={expandedResult.corrections[chart] || []}
                       tpNotices={expandedResult.tpNotices[chart] || []}
                       tpInForce={expandedResult.tpInForce?.[chart] || []}

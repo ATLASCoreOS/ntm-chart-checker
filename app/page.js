@@ -234,6 +234,12 @@ export default function Dashboard() {
             weeksLoading={weeksLoading}
           />
 
+          {!result && !error && !loading && !foliosLoading && charts.length > 0 && (
+            <p className="text-center text-sm text-slate-400 py-2">
+              Tap <span className="font-medium text-slate-500">Run check</span> to see this week&apos;s corrections for your charts.
+            </p>
+          )}
+
           {error && (
             <div
               className="flex items-center gap-2.5 bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm animate-fade-in"
@@ -262,6 +268,7 @@ export default function Dashboard() {
                     <ChartResult
                       key={chart}
                       chart={chart}
+                      chartName={result.chartNames?.[chart]}
                       corrections={result.corrections[chart] || []}
                       tpNotices={result.tpNotices[chart] || []}
                       tpInForce={result.tpInForce?.[chart] || []}

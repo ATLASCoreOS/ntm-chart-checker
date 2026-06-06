@@ -94,6 +94,9 @@ export default function VesselSelector({
       <button
         onClick={() => setOpen(!open)}
         className="card w-full text-left px-5 py-4 flex items-center justify-between hover:shadow-card-hover transition-shadow"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label="Select vessel folio"
       >
         <div className="flex items-center gap-3 min-w-0">
           <svg
@@ -230,8 +233,9 @@ export default function VesselSelector({
                           setEditName(folio.vesselName);
                           setConfirmDeleteId(null);
                         }}
-                        className="p-1.5 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                        className="p-2.5 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
                         title="Rename"
+                        aria-label={`Rename ${folio.vesselName}`}
                       >
                         <svg
                           className="w-3.5 h-3.5"
@@ -250,8 +254,9 @@ export default function VesselSelector({
                             setConfirmDeleteId(folio.id);
                             setEditingId(null);
                           }}
-                          className="p-1.5 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-colors"
+                          className="p-2.5 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-colors"
                           title="Delete"
+                          aria-label={`Delete ${folio.vesselName}`}
                         >
                           <svg
                             className="w-3.5 h-3.5"

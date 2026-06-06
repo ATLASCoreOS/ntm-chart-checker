@@ -29,12 +29,12 @@ export default function NavBar({ activePage }) {
               </NavLink>
 
               <div className="ml-3 pl-3 border-l border-navy-700 flex items-center gap-3">
-                <span className="text-2xs text-navy-400 hidden sm:inline truncate max-w-[160px]">
+                <span className="text-2xs text-navy-200 hidden sm:inline truncate max-w-[160px]">
                   {session.user.email}
                 </span>
                 <button
                   onClick={() => signOut({ callbackUrl: "/login" })}
-                  className="text-2xs text-navy-400 hover:text-white transition-colors duration-150"
+                  className="text-xs text-navy-200 hover:text-white transition-colors duration-150 min-h-[44px] inline-flex items-center px-1"
                 >
                   Log out
                 </button>
@@ -51,10 +51,10 @@ function NavLink({ href, active, children }) {
   return (
     <Link
       href={href}
-      className={`px-3 py-1.5 text-sm rounded-md transition-colors duration-150 ${
+      className={`px-3 min-h-[44px] inline-flex items-center text-sm rounded-md transition-colors duration-150 ${
         active
           ? "text-white bg-white/10 font-medium"
-          : "text-navy-300 hover:text-white hover:bg-white/5"
+          : "text-navy-200 hover:text-white hover:bg-white/5"
       }`}
     >
       {children}
