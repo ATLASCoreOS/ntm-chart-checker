@@ -83,3 +83,14 @@ model WeekCache {
   @@unique([weekYear, weekNumber], map: "uniq_weekcache_year_week")
   @@map("week_cache")
 }
+
+// Fixed-window rate limiter. One row per (scope:identifier:time-bucket);
+// count is incremented per request and compared against the limit.
+model RateHit {
+  key       String   @id
+  count     Int      @default(0)
+  expiresAt DateTime @map("expires_at")
+
+  @@index([expiresAt], map: "idx_ratehit_expires")
+  @@map("rate_hits")
+}

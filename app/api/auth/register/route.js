@@ -3,9 +3,23 @@ import bcrypt from "bcryptjs";
 import prisma from "@/lib/db";
 import { DEFAULT_CHARTS } from "@/lib/charts";
 import { BCRYPT_ROUNDS } from "@/lib/constants";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 export async function POST(request) {
   try {
+    // Throttle registrations per IP to curb spam/enumeration
+    const limit = await rateLimit({
+      key: `register:${clientIp(request)}`,
+      limit: 5,
+      windowSec: 3600,
+    });
+    if (!limit.ok) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(limit.retryAfter) } }
+      );
+    }
+
     const { email: rawEmail, password, name } = await request.json();
 
     // Validate
