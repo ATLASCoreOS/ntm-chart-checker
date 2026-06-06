@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import NavBar from "@/components/NavBar";
 import VesselSelector from "@/components/VesselSelector";
 import ChartManager from "@/components/ChartManager";
@@ -24,6 +24,10 @@ export default function Dashboard() {
   const [availableWeeks, setAvailableWeeks] = useState([]);
   const [weeksLoading, setWeeksLoading] = useState(true);
   const [selectedWeek, setSelectedWeek] = useState(null);
+  const cooldownTimerRef = useRef(null);
+
+  // Clear any running cooldown timer when the page unmounts
+  useEffect(() => () => clearInterval(cooldownTimerRef.current), []);
 
   const activeFolio = folios.find((f) => f.id === activeFolioId);
   const charts = activeFolio?.charts || [];
@@ -183,10 +187,11 @@ export default function Dashboard() {
   function startCooldown() {
     setCooldown(true);
     setCooldownSeconds(COOLDOWN_SECONDS);
-    const interval = setInterval(() => {
+    clearInterval(cooldownTimerRef.current);
+    cooldownTimerRef.current = setInterval(() => {
       setCooldownSeconds((prev) => {
         if (prev <= 1) {
-          clearInterval(interval);
+          clearInterval(cooldownTimerRef.current);
           setCooldown(false);
           return 0;
         }

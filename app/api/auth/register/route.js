@@ -6,15 +6,17 @@ import { BCRYPT_ROUNDS } from "@/lib/constants";
 
 export async function POST(request) {
   try {
-    const { email, password, name } = await request.json();
+    const { email: rawEmail, password, name } = await request.json();
 
     // Validate
-    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+    if (!rawEmail || !/\S+@\S+\.\S+/.test(rawEmail)) {
       return NextResponse.json(
         { error: "Invalid email address" },
         { status: 400 }
       );
     }
+    // Normalize so logins are case/whitespace-insensitive
+    const email = rawEmail.trim().toLowerCase();
     if (!password || password.length < 8) {
       return NextResponse.json(
         { error: "Password must be at least 8 characters" },

@@ -24,9 +24,23 @@ export async function GET() {
       return new Response("Unauthorized", { status: 401 });
     }
 
-    const folio = await prisma.chartFolio.findUnique({
-      where: { userId: session.user.id },
+    // Resolve the active folio (userId is not unique — a user may have many)
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { activeFolioId: true },
     });
+    let folio = null;
+    if (currentUser?.activeFolioId) {
+      folio = await prisma.chartFolio.findFirst({
+        where: { id: currentUser.activeFolioId, userId: session.user.id },
+      });
+    }
+    if (!folio) {
+      folio = await prisma.chartFolio.findFirst({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "asc" },
+      });
+    }
     const charts = validateCharts(folio?.charts || DEFAULT_CHARTS);
 
     const html = await fetchWeeklyPage();

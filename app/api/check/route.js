@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { validateCharts, DEFAULT_CHARTS } from "@/lib/charts";
+import { COOLDOWN_SECONDS } from "@/lib/constants";
 import { fetchWeeklyPage, parsePageLinks, identifyPDFs } from "@/lib/scraper";
 import {
   downloadAndParsePDF,
@@ -25,6 +26,27 @@ export async function POST(request) {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Enforce a per-user cooldown server-side (the client timer is advisory).
+    // Protects UKHO from rapid scraping and limits function abuse.
+    const lastCheck = await prisma.check.findFirst({
+      where: { userId: session.user.id },
+      orderBy: { checkedAt: "desc" },
+      select: { checkedAt: true },
+    });
+    if (lastCheck) {
+      const elapsedSec = (Date.now() - lastCheck.checkedAt.getTime()) / 1000;
+      if (elapsedSec < COOLDOWN_SECONDS) {
+        const retryAfter = Math.ceil(COOLDOWN_SECONDS - elapsedSec);
+        return NextResponse.json(
+          {
+            error: `Please wait ${retryAfter}s before checking again`,
+            retryAfter,
+          },
+          { status: 429, headers: { "Retry-After": String(retryAfter) } }
+        );
+      }
     }
 
     // Parse optional year/week from request body
