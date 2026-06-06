@@ -12,13 +12,13 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { activeFolioId: true },
+    select: {
+      activeFolioId: true,
+      folios: { orderBy: { createdAt: "asc" } },
+    },
   });
 
-  let folios = await prisma.chartFolio.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  let folios = user?.folios || [];
 
   // Create default folio if none exists
   if (folios.length === 0) {

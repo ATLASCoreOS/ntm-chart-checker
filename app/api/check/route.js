@@ -90,17 +90,122 @@ export async function POST(request) {
       );
     }
 
-    // 3. Fetch and parse UKHO page (current or specified week)
+    // 3. Resolve the week's parsed PDF text.
+    //    The parsed text is identical for all users for a given week, so it's
+    //    cached in WeekCache: only the first check of a week pays the cost of
+    //    downloading + parsing the PDFs; everyone after reuses the cache.
     const startTime = Date.now();
-    let t0 = Date.now();
-    const html = await fetchWeeklyPage(
-      requestedYear && requestedWeek
-        ? { year: requestedYear, week: requestedWeek }
-        : {}
-    );
-    perf("fetchWeeklyPage", Date.now() - t0);
+    let sniiText = null; // Section II full text (corrections + new T&P)
+    let pageTexts = null; // per-page text for PDF page lookup
+    let sectionIAText = null; // Section IA text (T&P in force list), may be ""
+    let hasInForce = false;
+    let links = [];
+    let weekInfo = null;
+    let cacheHit = false;
+    const failures = [];
 
-    const { links, weekInfo } = parsePageLinks(html);
+    const cacheKey = (y, w) => ({ weekYear_weekNumber: { weekYear: y, weekNumber: w } });
+
+    // Past week with a known key: try the cache before any network call.
+    if (requestedYear && requestedWeek) {
+      const cached = await prisma.weekCache.findUnique({
+        where: cacheKey(requestedYear, requestedWeek),
+      });
+      if (cached) {
+        ({ sniiText, pageTexts, sectionIAText, links, weekInfo, hasInForce } = cached);
+        cacheHit = true;
+      }
+    }
+
+    // No direct hit — fetch the weekly page (also tells us the current week).
+    if (!cacheHit) {
+      let t0 = Date.now();
+      const html = await fetchWeeklyPage(
+        requestedYear && requestedWeek
+          ? { year: requestedYear, week: requestedWeek }
+          : {}
+      );
+      perf("fetchWeeklyPage", Date.now() - t0);
+      const parsed = parsePageLinks(html);
+      links = parsed.links;
+      weekInfo = parsed.weekInfo;
+
+      // Now that we know the week number, try the cache again (current week).
+      const cached = await prisma.weekCache.findUnique({
+        where: cacheKey(weekInfo.year, weekInfo.week),
+      });
+      if (cached) {
+        sniiText = cached.sniiText;
+        pageTexts = cached.pageTexts;
+        sectionIAText = cached.sectionIAText;
+        hasInForce = cached.hasInForce;
+        links = cached.links; // full link list incl. block PDFs
+        weekInfo = cached.weekInfo;
+        cacheHit = true;
+      } else {
+        // Cache miss — download + parse both PDFs (the expensive path).
+        const { weeklyNtm, sectionII } = identifyPDFs(links, charts);
+        t0 = Date.now();
+        const [sniiResult, wknmResult] = await Promise.all([
+          sectionII
+            ? downloadAndParsePDFWithPages(sectionII.url)
+                .then((data) => ({ ok: true, data }))
+                .catch((err) => ({ ok: false, error: err.message }))
+            : Promise.resolve(null),
+          weeklyNtm
+            ? downloadAndParsePDF(weeklyNtm.url)
+                .then((text) => ({ ok: true, text }))
+                .catch((err) => ({ ok: false, error: err.message }))
+            : Promise.resolve(null),
+        ]);
+        perf("downloadPDFs (parallel)", Date.now() - t0);
+
+        if (sniiResult?.ok) {
+          sniiText = sniiResult.data.text;
+          pageTexts = sniiResult.data.pageTexts;
+        } else if (sniiResult && !sniiResult.ok) {
+          log("error", "Section II PDF download/parse failed", sniiResult.error);
+          failures.push("Section II (corrections) PDF failed to load");
+        } else if (!sectionII) {
+          log("warn", "Section II PDF not found on UKHO page");
+          failures.push("Section II PDF not found on UKHO page");
+        }
+
+        if (wknmResult?.ok) {
+          sectionIAText = extractSectionIA(wknmResult.text);
+          hasInForce = hasTpInForceList(sectionIAText);
+        } else if (wknmResult && !wknmResult.ok) {
+          log("error", "Weekly NtM PDF download/parse failed", wknmResult.error);
+          failures.push("Weekly NtM (T&P in force) PDF failed to load");
+        } else if (!weeklyNtm) {
+          log("warn", "Weekly NtM PDF not found on UKHO page");
+          failures.push("Weekly NtM PDF not found on UKHO page");
+        }
+
+        // Cache the parsed week for everyone (only when we got Section II).
+        if (sniiText !== null) {
+          await prisma.weekCache.upsert({
+            where: cacheKey(weekInfo.year, weekInfo.week),
+            update: { sniiText, pageTexts, sectionIAText: sectionIAText || "", links, weekInfo, hasInForce },
+            create: {
+              weekYear: weekInfo.year,
+              weekNumber: weekInfo.week,
+              sniiText,
+              pageTexts,
+              sectionIAText: sectionIAText || "",
+              links,
+              weekInfo,
+              hasInForce,
+            },
+          });
+          log("info", `Cached parsed Wk ${weekInfo.week}/${weekInfo.year}`);
+        }
+      }
+    }
+    perf("resolveWeek", Date.now() - startTime);
+    log("info", `WeekCache ${cacheHit ? "HIT" : "MISS"} for Wk ${weekInfo.week}/${weekInfo.year}`);
+
+    // Identify PDFs from the (cached or fresh) link list for this user's charts.
     const { weeklyNtm, sectionII, chartBlocks, allChartBlocks } = identifyPDFs(
       links,
       charts
@@ -109,121 +214,54 @@ export async function POST(request) {
     let corrections = {};
     let tpNotices = {};
     let tpInForce = {};
-    const failures = [];
     for (const chart of charts) {
       corrections[chart] = [];
       tpNotices[chart] = [];
       tpInForce[chart] = [];
     }
 
-    // 4. Download both PDFs in parallel — biggest performance win
-    t0 = Date.now();
-    const [sniiResult, wknmResult] = await Promise.all([
-      sectionII
-        ? downloadAndParsePDFWithPages(sectionII.url)
-            .then((data) => ({ ok: true, data }))
-            .catch((err) => ({ ok: false, error: err.message }))
-        : Promise.resolve(null),
-      weeklyNtm
-        ? downloadAndParsePDF(weeklyNtm.url)
-            .then((text) => ({ ok: true, text }))
-            .catch((err) => ({ ok: false, error: err.message }))
-        : Promise.resolve(null),
-    ]);
-    perf("downloadPDFs (parallel)", Date.now() - t0);
-
-    // 5. Parse Section II PDF (snii) — chart corrections + new T&P notices
-    if (sniiResult?.ok) {
-      t0 = Date.now();
-      const { text, pageTexts } = sniiResult.data;
-      corrections = findCorrections(text, charts);
-      tpNotices = findTPNotices(text, charts);
-
-      // Assign PDF page numbers to corrections for rendering
-      for (const chart of charts) {
-        for (const corr of corrections[chart]) {
-          corr.pdfPage = findPageForCorrection(
-            pageTexts,
-            corr.nmNumber,
-            chart
-          );
+    // 4. Chart corrections + new T&P notices from the Section II text (fast).
+    if (sniiText) {
+      const t0 = Date.now();
+      corrections = findCorrections(sniiText, charts);
+      tpNotices = findTPNotices(sniiText, charts);
+      if (pageTexts) {
+        for (const chart of charts) {
+          for (const corr of corrections[chart]) {
+            corr.pdfPage = findPageForCorrection(pageTexts, corr.nmNumber, chart);
+          }
         }
       }
-      perf("parseSectionII", Date.now() - t0);
-    } else if (sniiResult && !sniiResult.ok) {
-      log("error", "Section II PDF download/parse failed", sniiResult.error);
-      failures.push("Section II (corrections) PDF failed to load");
-    } else if (!sectionII) {
-      log("warn", "Section II PDF not found on UKHO page");
-      failures.push("Section II PDF not found on UKHO page");
+      perf("matchSectionII", Date.now() - t0);
     }
 
-    // 6. Parse weekly NtM PDF (wknm) — T&P notices in force from Section IA
-    //    Cache the Section IA text when available; load from cache when not.
+    // 5. T&P in force from Section IA text, with cross-week TpCache fallback.
     let tpInForceWeek = null;
-    if (wknmResult?.ok) {
-      t0 = Date.now();
-      const sectionIAText = extractSectionIA(wknmResult.text);
+    if (hasInForce && sectionIAText) {
+      tpInForce = findTPInForce(sectionIAText, charts);
+      tpInForceWeek = { year: weekInfo.year, week: weekInfo.week };
 
-      if (hasTpInForceList(sectionIAText)) {
-        // This week's PDF contains the monthly T&P In Force list
-        tpInForce = findTPInForce(sectionIAText, charts);
-        tpInForceWeek = { year: weekInfo.year, week: weekInfo.week };
-
-        // Cache the Section IA text for weeks that don't have it
+      // Keep the singleton TpCache pointing at the newest in-force list only.
+      const existing = await prisma.tpCache.findUnique({ where: { id: "singleton" } });
+      const isNewer =
+        !existing ||
+        weekInfo.year > existing.weekYear ||
+        (weekInfo.year === existing.weekYear && weekInfo.week >= existing.weekNumber);
+      if (isNewer) {
         await prisma.tpCache.upsert({
           where: { id: "singleton" },
-          update: {
-            weekYear: weekInfo.year,
-            weekNumber: weekInfo.week,
-            sectionText: sectionIAText,
-          },
-          create: {
-            id: "singleton",
-            weekYear: weekInfo.year,
-            weekNumber: weekInfo.week,
-            sectionText: sectionIAText,
-          },
+          update: { weekYear: weekInfo.year, weekNumber: weekInfo.week, sectionText: sectionIAText },
+          create: { id: "singleton", weekYear: weekInfo.year, weekNumber: weekInfo.week, sectionText: sectionIAText },
         });
-        log("info", `Cached T&P In Force from Wk ${weekInfo.week}/${weekInfo.year}`);
-      } else {
-        // No T&P list this week — load from cache
-        const cached = await prisma.tpCache.findUnique({
-          where: { id: "singleton" },
-        });
-        if (cached) {
-          tpInForce = findTPInForce(cached.sectionText, charts);
-          tpInForceWeek = { year: cached.weekYear, week: cached.weekNumber };
-          log("info", `Using cached T&P In Force from Wk ${cached.weekNumber}/${cached.weekYear}`);
-        } else {
-          log("warn", "No T&P In Force cache available yet");
-        }
       }
-      perf("parseWKNM", Date.now() - t0);
-    } else if (wknmResult && !wknmResult.ok) {
-      log("error", "Weekly NtM PDF download/parse failed", wknmResult.error);
-      // Still try the cache
-      const cached = await prisma.tpCache.findUnique({
-        where: { id: "singleton" },
-      });
+    } else {
+      // No in-force list this week — fall back to the last cached one.
+      const cached = await prisma.tpCache.findUnique({ where: { id: "singleton" } });
       if (cached) {
         tpInForce = findTPInForce(cached.sectionText, charts);
         tpInForceWeek = { year: cached.weekYear, week: cached.weekNumber };
-        log("info", `Using cached T&P In Force (PDF failed) from Wk ${cached.weekNumber}/${cached.weekYear}`);
       } else {
-        failures.push("Weekly NtM (T&P in force) PDF failed to load");
-      }
-    } else if (!weeklyNtm) {
-      log("warn", "Weekly NtM PDF not found on UKHO page");
-      const cached = await prisma.tpCache.findUnique({
-        where: { id: "singleton" },
-      });
-      if (cached) {
-        tpInForce = findTPInForce(cached.sectionText, charts);
-        tpInForceWeek = { year: cached.weekYear, week: cached.weekNumber };
-        log("info", `Using cached T&P In Force (no PDF) from Wk ${cached.weekNumber}/${cached.weekYear}`);
-      } else {
-        failures.push("Weekly NtM PDF not found on UKHO page");
+        log("warn", "No T&P In Force cache available yet");
       }
     }
 
@@ -285,6 +323,7 @@ export async function POST(request) {
       sectionIIUrl: sectionII?.url || null,
       checkedAt,
       durationMs,
+      fromCache: cacheHit,
       sourceUrl: "https://msi.admiralty.co.uk/NoticesToMariners/Weekly",
     };
 

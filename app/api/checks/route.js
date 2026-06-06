@@ -37,5 +37,8 @@ export async function GET(request) {
     checkedAt: check.checkedAt,
   }));
 
-  return NextResponse.json({ checks: summary, total, page, limit });
+  return NextResponse.json(
+    { checks: summary, total, page, limit },
+    { headers: { "Cache-Control": "private, max-age=30" } }
+  );
 }

@@ -63,3 +63,23 @@ model TpCache {
 
   @@map("tp_in_force_cache")
 }
+
+// Parsed weekly NtM PDFs, shared across all users for a given week.
+// First check of a week populates this; subsequent checks skip the
+// expensive PDF download + parse and just re-run the cheap chart matching.
+model WeekCache {
+  id            String   @id @default(uuid())
+  weekYear      Int      @map("week_year")
+  weekNumber    Int      @map("week_number")
+  sniiText      String   @map("snii_text")
+  pageTexts     Json     @map("page_texts")
+  sectionIAText String   @map("section_ia_text")
+  links         Json
+  weekInfo      Json     @map("week_info")
+  hasInForce    Boolean  @default(false) @map("has_in_force")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([weekYear, weekNumber], map: "uniq_weekcache_year_week")
+  @@map("week_cache")
+}

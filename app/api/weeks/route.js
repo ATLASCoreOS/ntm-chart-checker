@@ -15,15 +15,16 @@ export async function GET() {
 
   try {
     const now = Date.now();
+    const cacheHeader = { "Cache-Control": "public, max-age=3600" };
     if (cachedWeeks && now - cachedAt < CACHE_TTL) {
-      return NextResponse.json({ weeks: cachedWeeks });
+      return NextResponse.json({ weeks: cachedWeeks }, { headers: cacheHeader });
     }
 
     const weeks = await fetchAvailableWeeks();
     cachedWeeks = weeks;
     cachedAt = now;
 
-    return NextResponse.json({ weeks });
+    return NextResponse.json({ weeks }, { headers: cacheHeader });
   } catch (error) {
     console.error("Failed to fetch available weeks:", error.message);
     return NextResponse.json(
